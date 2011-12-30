@@ -1,0 +1,172 @@
+   1               		.file	"USB-EP0.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               		.section	.text.Initialize_USB,"ax",@progbits
+  17               	.global	Initialize_USB
+  19               	Initialize_USB:
+  20               	.LFB29:
+  21               	.LSM0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24               	/* stack size = 0 */
+  25               	.L__stack_usage = 0
+  26               	.LSM1:
+  27 0000 0E94 0000 		call USB_Init
+  28               	.L2:
+  29               	.LSM2:
+  30 0004 0E94 0000 		call maintask
+  31               	.LSM3:
+  32 0008 0E94 0000 		call USB_USBTask
+  33 000c 00C0      		rjmp .L2
+  34               	.LFE29:
+  36               		.section	.text.EVENT_USB_Device_UnhandledControlRequest,"ax",@progbits
+  37               	.global	EVENT_USB_Device_UnhandledControlRequest
+  39               	EVENT_USB_Device_UnhandledControlRequest:
+  40               	.LFB30:
+  41               	.LSM4:
+  42               	/* prologue: function */
+  43               	/* frame size = 0 */
+  44               	/* stack size = 0 */
+  45               	.L__stack_usage = 0
+  46               	.LSM5:
+  47 0000 8091 0000 		lds r24,USB_ControlRequest
+  48 0004 8034      		cpi r24,lo8(64)
+  49 0006 01F4      		brne .L4
+  50               	.LSM6:
+  51 0008 8091 E800 		lds r24,232
+  52 000c 877F      		andi r24,lo8(-9)
+  53 000e 8093 E800 		sts 232,r24
+  54               	.L5:
+  55               	.LSM7:
+  56 0012 8091 E800 		lds r24,232
+  57 0016 82FF      		sbrs r24,2
+  58 0018 00C0      		rjmp .L5
+  59               	.LSM8:
+  60 001a 4091 F200 		lds r20,242
+  61               	.LVL0:
+  62               	.LSM9:
+  63 001e 4931      		cpi r20,lo8(25)
+  64 0020 00F4      		brsh .L6
+  65 0022 E0E0      		ldi r30,lo8(dataReceived)
+  66 0024 F0E0      		ldi r31,hi8(dataReceived)
+  67               	.LSM10:
+  68 0026 842F      		mov r24,r20
+  69 0028 90E0      		ldi r25,lo8(0)
+  70 002a 8E0F      		add r24,r30
+  71 002c 9F1F      		adc r25,r31
+  72 002e 00C0      		rjmp .L7
+  73               	.L8:
+  74               	.LBB8:
+  75               	.LBB9:
+  76               	.LBB10:
+  77               	.LSM11:
+  78 0030 2091 F100 		lds r18,241
+  79               	.LBE10:
+  80               	.LBE9:
+  81               	.LSM12:
+  82 0034 2193      		st Z+,r18
+  83               	.L7:
+  84               	.LSM13:
+  85 0036 E817      		cp r30,r24
+  86 0038 F907      		cpc r31,r25
+  87 003a 01F4      		brne .L8
+  88               	.L6:
+  89               	.LBE8:
+  90               	.LBB11:
+  91               	.LSM14:
+  92 003c 8091 E800 		lds r24,232
+  93               	.LVL1:
+  94 0040 982F      		mov r25,r24
+  95 0042 9B7F      		andi r25,lo8(-5)
+  96 0044 9093 E800 		sts 232,r25
+  97 0048 8F77      		andi r24,lo8(127)
+  98               	.LVL2:
+  99 004a 8093 E800 		sts 232,r24
+ 100               	.LBE11:
+ 101               	.LBB12:
+ 102               	.LSM15:
+ 103 004e 8091 E800 		lds r24,232
+ 104               	.LVL3:
+ 105 0052 982F      		mov r25,r24
+ 106 0054 9E7F      		andi r25,lo8(-2)
+ 107 0056 9093 E800 		sts 232,r25
+ 108 005a 8F77      		andi r24,lo8(127)
+ 109               	.LVL4:
+ 110 005c 8093 E800 		sts 232,r24
+ 111               	.LBE12:
+ 112               	.LSM16:
+ 113 0060 80E0      		ldi r24,lo8(USB_ControlRequest)
+ 114 0062 90E0      		ldi r25,hi8(USB_ControlRequest)
+ 115 0064 60E0      		ldi r22,lo8(dataReceived)
+ 116 0066 70E0      		ldi r23,hi8(dataReceived)
+ 117 0068 0E94 0000 		call usbFunctionWrite
+ 118               	.LVL5:
+ 119 006c 0895      		ret
+ 120               	.L4:
+ 121               	.LSM17:
+ 122 006e 803C      		cpi r24,lo8(-64)
+ 123 0070 01F4      		brne .L3
+ 124               	.LSM18:
+ 125 0072 80E0      		ldi r24,lo8(USB_ControlRequest)
+ 126 0074 90E0      		ldi r25,hi8(USB_ControlRequest)
+ 127 0076 0E94 0000 		call usbFunctionSetup
+ 128 007a 682F      		mov r22,r24
+ 129               	.LVL6:
+ 130               	.LSM19:
+ 131 007c 8091 E800 		lds r24,232
+ 132               	.LVL7:
+ 133 0080 877F      		andi r24,lo8(-9)
+ 134 0082 8093 E800 		sts 232,r24
+ 135               	.LSM20:
+ 136 0086 6623      		tst r22
+ 137 0088 01F0      		breq .L10
+ 138               	.LSM21:
+ 139 008a 8091 0000 		lds r24,usbMsgPtr
+ 140 008e 9091 0000 		lds r25,usbMsgPtr+1
+ 141 0092 70E0      		ldi r23,lo8(0)
+ 142 0094 0E94 0000 		call Endpoint_Write_Control_Stream_LE
+ 143               	.LVL8:
+ 144               	.L10:
+ 145               	.LBB13:
+ 146               	.LSM22:
+ 147 0098 8091 E800 		lds r24,232
+ 148               	.LVL9:
+ 149 009c 982F      		mov r25,r24
+ 150 009e 9B7F      		andi r25,lo8(-5)
+ 151 00a0 9093 E800 		sts 232,r25
+ 152 00a4 8F77      		andi r24,lo8(127)
+ 153               	.LVL10:
+ 154 00a6 8093 E800 		sts 232,r24
+ 155               	.L3:
+ 156 00aa 0895      		ret
+ 157               	.LBE13:
+ 158               	.LFE30:
+ 160               		.comm dataReceived,24,1
+ 193               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 USB-EP0.c
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:2      *ABS*:0000003f __SREG__
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:5      *ABS*:00000034 __CCP__
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:19     .text.Initialize_USB:00000000 Initialize_USB
+C:\Users\Alex\AppData\Local\Temp\ccuWi8JS.s:39     .text.EVENT_USB_Device_UnhandledControlRequest:00000000 EVENT_USB_Device_UnhandledControlRequest
+                            *COM*:00000018 dataReceived
+
+UNDEFINED SYMBOLS
+USB_Init
+maintask
+USB_USBTask
+USB_ControlRequest
+usbFunctionWrite
+usbFunctionSetup
+usbMsgPtr
+Endpoint_Write_Control_Stream_LE
+__do_clear_bss

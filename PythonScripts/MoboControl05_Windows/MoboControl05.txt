@@ -1,0 +1,247 @@
+A quick guide to MoboControl05
+
+
+MoboControl05 is used to control the various parameters in the firmware of the Mobo 4.3.
+It can also be used for the Softrock USB/I2C interface by PE0FKO, as well as the ATmega168
+or UBW derivatives.  When used with the latter 3, a limited number of options are active.
+
+-------------------------------------------------------------------------------------------------------------
+
+Frequency control:
+
+Frequency (in Hz) can be entered into the "Frequency" spinbox.  The spinbox can also be used 
+to step the frequency up or down, by using the up/down arrows, or by clicking the mouse on 
+the spinbox for focus, and then use the mouse wheel for spinning.  Spin steps are set using
+the "Spin:" combobox to the right.
+
+-------------------------------------------------------------------------------------------------------------
+
+Frequency calibration:
+
+(cut/paste text from Alex), tested and verified OK
+
+The following assumes that you are using PSDR-IQ.
+
+ Check that your IF is at the default 9khz (if not, note down what IF it is).
+(2)  Check also that the fcryst (or Xtal, or Fxtal etc.) frequency is at the default 114.285 Mhz.
+(3)  Tune to WWV, say 5Mhz.
+(4)  Now note down the exact turned freq, say 5.000123 Mhz.
+(5)  Close PSDR-IQ.
+(6)  Start MoboConfig.
+(7)  The tuned freq box should already have 4.991123 Mhz there.  If not, enter the value (which is the freq in step (4) - 9khz).
+(8)  In the "real" freq box enter 4.991000 Mhz.
+(9)  Hit "Si570 Calibrate".
+(10) Close MoboConfig.
+(11) Fire up PSDR-IQ, and tune to WWV - and voila, it shold be spot on!!!!!
+
+-------------------------------------------------------------------------------------------------------------
+
+Bias calibration:
+
+(cut/paste text from Alex, with a couple of little additions)
+
+The bias values are set to control the operating bias point of the RD16.
+
+Normal setting for bias low is 20 ma, and bias high is normally set at
+350mA to 650mA.
+
+Bias is automatically calibrated by hitting the "Bias Calibrate" button.
+
+After bias calibration, the actual bias point is automatically set to
+H (ie bias high level).  So if you set bias high to 350ma, this is the
+quiescent drain current with no input I/Q drive.  If you set bias high
+to 50 ma, it will be the quiescent drain current  etc.
+
+The Default Bias point can be switched between High and Low by pressing
+the "H" and "L" buttons.
+
+"Key TX" can be used to verify the current draw during Transmit.
+
+"Bias Raw Low" and "Bias Raw High" can be used to manually adjust the
+bias settings.  These values are enacted instantly, the "Bias Calibrate"
+button is not used. New settings don't become active if the Mobo is in
+Transmit mode.  They will become active as soon as the value is changed,
+while the Mobo is in receive mode.  Normally these values are not
+modified manually, however this can be useful in a fault finding
+situation, for instance if the AD7991 ADC is not working for automatic
+measurement of the PA current draw.
+
+For normal operation, we would like to set the RD16 bias to CLASS A,
+so the recommended bias high setting is 630ma for best linearity.
+However, the heat sink gets quite hot (and may go into thermal
+shutdown protection after a few minute).  So I usually set it to
+500ma.  Note that in CLASS A, the heat sink gets hotter when there is
+NO I/Q drive and power out.  It actually gets cooler (less
+dissipation) if you have full power out.  This is DIFFERENT from the
+ordinary CLASS AB push-pull PA's.
+
+However, if linearity is not a concern, eg when you are operating CW,
+then you can bias the RD16 into CLASS AB or CLASS B, by setting the
+bias high to progressively lower and lower levels.  If you set bias
+high to 20ma, you are running at CLASS B.  However, the gain at CLASS
+B is much lower than in CLASS A, so you will find you need a high I/Q
+drive.  The advantage of CLASS B is that the heat dissipation is
+minimal with no power output.  It only heats up with key down.  (So
+this is the more usual PA situation.)
+
+Now about bias low.  You can change the operating bias of the Mobo to
+use the bias low setting instead of the "usual" bias high setting,
+using Fred's CfgSR tool, or moboControl tool.  When you do that, the
+LCD displays L (instead of H).  So it bias low is set to 20ma, this
+will be the operating bias.
+
+Now back to bias high.  In normal operations, the Mobo is set to bias
+high, as indicated by the LCD display of H.  Now if there is a high
+SWR situation during Tx (eg when the ANT is disconnected
+accidentally), the high SWR protection feature kicks in.  LCD will
+display R.  This is the "reduced" bias state.  The bias level is
+actually set to the bias low, or L level.  After a set time period (a
+few seconds to many seconds, configurable), the R state is changed
+back to the H state.  If the high SWR situation is still not resolved,
+then the protection kicks in a gain an bias is set to R.
+
+So the key to understanding all these is that the Mobo PA is different
+from the "usual" PA's:
+
+(1)  It is run in normal operation in CLASS A
+(2)  it has software configurable bias settings, H and L
+(3)  it has automatic high SWR protection, bias R
+(4)  it has thermal shutdown protection
+
+-------------------------------------------------------------------------------------------------------------
+
+External PCF8574:
+
+The PCF8574 General Purpose Input/Output Extender is bidirectional.  The PCF is by default with all outputs set
+as high, which also makes them work as inputs.  It takes about 100uA to pull a pin down to low.  On the other
+hand, if a PCF pin has been written to, changing it to low, then it cannot be used as input.  The low output is
+capable of sinking several mA, unlike the high setting, which cannot source any current (open collector like).
+
+"I2C addr" should contain the I2C address of the external PCF8574 to be controlled.  Start by pushing "Read",
+to poll the inputs.  This will result in the read input value being shown in hexadecimal format, under "In  hex".
+The read value will also be shown in "Out  hex", and in a bitwise notation in the eight check boxes.
+
+To edit the "Out  hex" value, the individual check boxes can be ticked or unticked, or alternately, the value in
+the "Out  hex" box can be rewritten.  Write out to the PCF by pushing the Write button.
+
+Note:  If an external PCF is being used for Cooling Fan Control, then the same PCF can also be controlled with this
+utility.  The firmware does not alter or care about the settings of other bits than the Fan control bit (normally
+bit 0).
+
+Note: If this command is set to the I2C address of the built in PCF8574 (PCF8574 Mobo, normally address 63), then
+the current output of that PCF can be read by using the Read button.  If a new value is written out using the Write
+button, then this value will be overwritten by the firmware next time it writes to the PCF, for instance when
+changing between Transmit/Receive, or changing Filter settings.
+
+-------------------------------------------------------------------------------------------------------------
+
+Temperature Settings:
+
+The Temperature Alarm function shuts the transmitter off if the temperature goes one degree above the setting
+contained in "Tmp Alarm".
+
+The Fan kicks in once the Temperature goes one degree above the one contained in the "Fan On" setting.
+The Fan shuts off again once the temperature cools down to the setting contained in "Fan Off".  Note that if 
+Fan Off is larger than Fan On, then the fan will never shut off.
+
+-------------------------------------------------------------------------------------------------------------
+
+Bells and Whistles:
+
+Rotary Encoder Resolution contains a value which is normally 4 times the specified Pulses Per Revolution (PPR)
+value for the Encoder.  This will result in 1kHz frequency change for each turn of the Encoder.  Note that the
+Encoder function has two speeds, 1x and 100x.  The 100x function activates if the angular turning speed of the
+Encoder is faster than a certain trigger value.  This value is dependent on the Rotary Encoder Resolution value.
+Therefore, some experimentation may be in order to get best results.
+
+"LCD frq offset for PSDR-IQ" is a LCD display frequency offset feature used with SV1EIA's PSDR-IQ.  When in
+receive mode, PSDR-IQ has a fixed IF offset, normally 9kHz.  However when in transmit mode, the offset changes
+to 0kHz.  As a result, when in receive, the LCD will show a frequency which is offset from the actual tuned
+frequency, while the transmit frequency displayed on the LCD will be correct.  By entering the receive offset
+into the "LCD frq offset for PSDR-IQ" value, the LCD will show correct frequency, both during transmit and
+receive.
+
+-------------------------------------------------------------------------------------------------------------
+
+Power Meter and SWR Alarm:
+
+"Scale":  		Power meter bargraph full scale setting, both LCD and the builtin MoboControl power meter.
+
+"Cal":			Calibration value for the Power meter.  Nominal value is 1000.  Adjust this value, using an
+			accurate external meter as reference.
+
+"PEP Sample window":	The Power measurements from the Power/SWR board is sampled 10 times per second.
+			This is the sample size of a sliding window function, which uses the largest value within
+			the window to derive the measured power.  A sample size of 1 sets the window size down to 0,
+			only one sample used for each measurement.  A sample size of 20 results in a PEP measurement,
+			showing the largest value measured within a 2 second period.  Default is 10, for 1 second.
+
+"SWR Alarm": 		Sets the trigger point for an SWR Alarm function, which switches the bias from the High
+			setting to the Low setting (Reduced), if SWR goes above the trigger point.  Output P33
+			on the Mobo, PTT2 is an SWR Alarm protected PTT output.  If SWR alarm, then this output
+			deactivates.
+
+"Alarm Latency":	Sets the time period it takes to revert back from an SWR alarm situation.  Unit size is 10ms,
+			largest possible value is 65535, which would be awfully long.
+
+"Valid min PWR trig":	Sets the minimum needed Power input to activate the SWR alarm.  Value is in mW, largest
+			value is 65535, which is 65.5W.  Setting this at a high value will deactivate the SWR Alarm
+			function.
+
+-------------------------------------------------------------------------------------------------------------
+
+Filter Crossover Function:
+
+The first Filter/Crossover table shows the Crossover frequencies for the builtin Band Pass Filters (BPF).
+The lowest filter will be active below the first Crossover frequency shown, the second filter will become active
+once the frequency is equal to or larger than the first Crossover frequency, the third filter when the second
+crossover frequency,... etc...
+
+The second Filter/Crossover table shows the Crossover frequencies for the external Low Pass or Band Pass Filters.
+The lowest filter will be active below the first Crossover frequency shown, the second filter will become active
+once the frequency is equal to or larger than the first Crossover frequency, the third filter when the second
+crossover frequency,... etc...
+
+Note: On the LCD, first line, on the right hand side, the current filter settings are shown.
+
+To read the current Filter settings, press the "All Filters Update" button.
+To modify one filter crossover point, on either the internal BPF or the external LPF, enter the crossover point number,
+and the freuqency in kHz and push Update.
+
+-------------------------------------------------------------------------------------------------------------
+
+I2C Address Control:
+
+Here the individual I2C addresses can be modified.  The default addresses are usually OK, correspond to all
+switches on SW1 being in the Off position.
+
+-------------------------------------------------------------------------------------------------------------
+
+Read From Firmware:
+
+"Poll":			Read live measurement from the firmware, one read only.
+"Loop live":		Continuous poll of all live measurements, one poll per 1/5 seconds.  Some SDR software which
+			regularly polls the USB is tolerant of MoboControl doing concurrent polls, but no guarantees,
+			things may misbehave. PSDR-IQ 1.12.2x may not work well with MoboControl running concurrently.
+			PSDR-IQ 1.19.x.x appears to work well with MoboControl running concurrently.
+			Rocky and MoboControl coexist without problems on some PC platforms.
+
+-------------------------------------------------------------------------------------------------------------
+
+Configuration Maintenance:
+
+"Save":			Save all settings to a file on disk.
+"Restore":		Restore all settings from a file on disk.
+"Reset":		Resets the firmware, same as a power cycle, no settings are changed.
+"Factory Reset":	Factory Reset of firmware, all values and settings are reset to default.
+
+-------------------------------------------------------------------------------------------------------------
+
+Firmware Control:
+
+"Start USB":		Connect to USB device, or Reconnect to USB if connection had been lost.
+"Quit":			This command doesn't really belong here.  Exits MoboControl.
+
+
+First draft, 2010-04-18, TF3LJ.  Any updates and improvements are most welcome.
+

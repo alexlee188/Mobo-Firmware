@@ -1,0 +1,105 @@
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            82:8a:8b:0c:e6:b1:8f:a0
+        Signature Algorithm: md5WithRSAEncryption
+        Issuer: CN=Amateur Radio Root Certificate., O=Amateur Radio PE0FKO, OU=Netherland
+        Validity
+            Not Before: Jul  1 20:32:53 2010 GMT
+            Not After : Jun 28 20:32:53 2020 GMT
+        Subject: CN=Amateur Radio Root Certificate., O=Amateur Radio PE0FKO, OU=Netherland
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+            RSA Public Key: (2048 bit)
+                Modulus (2048 bit):
+                    00:93:4c:a9:ca:de:f2:ec:f4:c2:ad:21:b3:f4:82:
+                    e3:31:c4:00:dd:8d:3b:db:7a:49:ff:41:28:3d:21:
+                    2c:35:26:6d:eb:ca:27:7a:c9:82:a7:57:e0:dc:58:
+                    c5:1a:2f:fb:06:f8:47:4b:98:7e:f0:1d:ed:10:66:
+                    52:35:16:f8:d1:4f:13:78:bc:29:3d:6d:09:83:0b:
+                    65:46:e9:66:6d:b2:b9:1c:af:39:fa:67:ed:13:f3:
+                    84:d4:91:cb:03:f0:71:64:49:4e:23:4b:60:87:97:
+                    d0:b7:a1:69:37:b8:32:54:90:87:3d:da:4d:3d:25:
+                    3b:a5:de:75:2a:0b:20:20:4f:32:31:8e:b8:15:a0:
+                    00:39:c0:44:2d:45:b1:23:0d:b1:b9:85:54:48:7c:
+                    3a:f7:f4:57:a7:af:2b:63:fc:14:ec:df:46:30:61:
+                    34:88:07:4b:ec:6b:33:f8:7b:c7:0b:18:91:90:a4:
+                    3d:00:b8:e0:20:a2:32:36:80:e4:41:28:b8:cf:50:
+                    16:96:11:9d:ce:64:db:72:08:cb:ac:a9:9d:d1:7d:
+                    47:55:99:0b:a8:06:a7:cb:01:7b:bb:71:94:5c:cf:
+                    99:bf:0a:b5:5e:d4:0d:b6:2d:2f:23:82:d5:dc:be:
+                    3b:2c:7a:5b:5c:41:94:62:e1:03:a1:82:51:8f:32:
+                    f4:99
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Key Identifier: 
+                FC:C7:A1:A5:B5:90:0C:C1:7E:66:AD:3B:5E:26:7E:E1:10:3A:1D:43
+            X509v3 Authority Key Identifier: 
+                keyid:FC:C7:A1:A5:B5:90:0C:C1:7E:66:AD:3B:5E:26:7E:E1:10:3A:1D:43
+                DirName:/CN=Amateur Radio Root Certificate./O=Amateur Radio PE0FKO/OU=Netherland
+                serial:82:8A:8B:0C:E6:B1:8F:A0
+
+            X509v3 Basic Constraints: 
+                CA:TRUE
+            X509v3 Key Usage: 
+                Certificate Sign, CRL Sign
+            Netscape Cert Type: 
+                SSL CA, S/MIME CA, Object Signing CA
+            X509v3 Subject Alternative Name: 
+                <EMPTY>
+
+            X509v3 Issuer Alternative Name: 
+                <EMPTY>
+
+            Netscape Comment: 
+                Amateur Radio Root Certificaat.
+            Netscape Base Url: 
+                https://home.ict.nl/~fredkrom/pe0fko/ca
+            Netscape CA Revocation Url: 
+                https://home.ict.nl/~fredkrom/pe0fko/ca/ca.crl
+    Signature Algorithm: md5WithRSAEncryption
+        18:10:d2:cf:70:b5:2f:43:18:fa:30:b9:d9:fe:7f:46:e8:f5:
+        ee:ce:48:87:78:ac:bb:22:ec:07:5b:10:13:50:96:31:fd:ce:
+        f0:53:5b:53:02:51:e0:d8:83:ee:98:e5:8e:13:5c:a9:9f:c1:
+        16:37:66:84:94:68:29:6e:ba:73:8a:77:97:d1:61:aa:dc:4b:
+        6a:e9:18:7d:e5:d6:e8:df:bf:93:33:af:9e:50:d5:e0:cb:3e:
+        d7:4d:33:13:e4:78:c8:2c:9c:28:99:a7:c2:e5:c5:c2:04:11:
+        42:14:1a:61:64:22:fd:d8:5a:35:1c:6f:c0:de:fa:86:15:54:
+        ae:12:bb:c0:48:d4:11:b2:4e:d0:a7:8a:ea:db:45:32:06:08:
+        da:98:6b:8c:35:c1:ea:7e:5a:5f:0e:c2:65:98:bc:42:48:0a:
+        20:b1:67:70:1a:5b:41:4b:b6:6d:77:73:4f:3d:16:f5:46:e6:
+        5c:24:2a:87:20:cb:55:b8:8a:c9:8e:e8:3c:b9:6a:5c:d7:d7:
+        34:ed:ca:02:67:57:29:f3:9c:c5:a9:e1:96:2a:36:19:16:db:
+        a9:10:96:cd:2f:41:aa:56:1d:b7:0d:61:ec:80:66:a9:bf:08:
+        68:6f:9c:cc:16:e8:81:e6:a1:1a:81:a9:7f:55:24:bd:e0:52:
+        e9:71:0a:f8
+-----BEGIN CERTIFICATE-----
+MIIE4jCCA8qgAwIBAgIJAIKKiwzmsY+gMA0GCSqGSIb3DQEBBAUAMF4xKDAmBgNV
+BAMTH0FtYXRldXIgUmFkaW8gUm9vdCBDZXJ0aWZpY2F0ZS4xHTAbBgNVBAoTFEFt
+YXRldXIgUmFkaW8gUEUwRktPMRMwEQYDVQQLEwpOZXRoZXJsYW5kMB4XDTEwMDcw
+MTIwMzI1M1oXDTIwMDYyODIwMzI1M1owXjEoMCYGA1UEAxMfQW1hdGV1ciBSYWRp
+byBSb290IENlcnRpZmljYXRlLjEdMBsGA1UEChMUQW1hdGV1ciBSYWRpbyBQRTBG
+S08xEzARBgNVBAsTCk5ldGhlcmxhbmQwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAw
+ggEKAoIBAQCTTKnK3vLs9MKtIbP0guMxxADdjTvbekn/QSg9ISw1Jm3ryid6yYKn
+V+DcWMUaL/sG+EdLmH7wHe0QZlI1FvjRTxN4vCk9bQmDC2VG6WZtsrkcrzn6Z+0T
+84TUkcsD8HFkSU4jS2CHl9C3oWk3uDJUkIc92k09JTul3nUqCyAgTzIxjrgVoAA5
+wEQtRbEjDbG5hVRIfDr39Fenrytj/BTs30YwYTSIB0vsazP4e8cLGJGQpD0AuOAg
+ojI2gORBKLjPUBaWEZ3OZNtyCMusqZ3RfUdVmQuoBqfLAXu7cZRcz5m/CrVe1A22
+LS8jgtXcvjsseltcQZRi4QOhglGPMvSZAgMBAAGjggGhMIIBnTAdBgNVHQ4EFgQU
+/MehpbWQDMF+Zq07XiZ+4RA6HUMwgZAGA1UdIwSBiDCBhYAU/MehpbWQDMF+Zq07
+XiZ+4RA6HUOhYqRgMF4xKDAmBgNVBAMTH0FtYXRldXIgUmFkaW8gUm9vdCBDZXJ0
+aWZpY2F0ZS4xHTAbBgNVBAoTFEFtYXRldXIgUmFkaW8gUEUwRktPMRMwEQYDVQQL
+EwpOZXRoZXJsYW5kggkAgoqLDOaxj6AwDAYDVR0TBAUwAwEB/zALBgNVHQ8EBAMC
+AQYwEQYJYIZIAYb4QgEBBAQDAgAHMAkGA1UdEQQCMAAwCQYDVR0SBAIwADAuBglg
+hkgBhvhCAQ0EIRYfQW1hdGV1ciBSYWRpbyBSb290IENlcnRpZmljYWF0LjA2Bglg
+hkgBhvhCAQIEKRYnaHR0cHM6Ly9ob21lLmljdC5ubC9+ZnJlZGtyb20vcGUwZmtv
+L2NhMD0GCWCGSAGG+EIBBAQwFi5odHRwczovL2hvbWUuaWN0Lm5sL35mcmVka3Jv
+bS9wZTBma28vY2EvY2EuY3JsMA0GCSqGSIb3DQEBBAUAA4IBAQAYENLPcLUvQxj6
+MLnZ/n9G6PXuzkiHeKy7IuwHWxATUJYx/c7wU1tTAlHg2IPumOWOE1ypn8EWN2aE
+lGgpbrpzineX0WGq3Etq6Rh95dbo37+TM6+eUNXgyz7XTTMT5HjILJwomafC5cXC
+BBFCFBphZCL92Fo1HG/A3vqGFVSuErvASNQRsk7Qp4rq20UyBgjamGuMNcHqflpf
+DsJlmLxCSAogsWdwGltBS7Ztd3NPPRb1RuZcJCqHIMtVuIrJjug8uWpc19c07coC
+Z1cp85zFqeGWKjYZFtupEJbNL0GqVh23DWHsgGapvwhob5zMFuiB5qEagal/VSS9
+4FLpcQr4
+-----END CERTIFICATE-----

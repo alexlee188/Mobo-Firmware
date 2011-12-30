@@ -1,0 +1,364 @@
+   1               		.file	"Mobo_I2C_Peripherals.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               		.section	.text.pcf8574_byte,"ax",@progbits
+  17               	.global	pcf8574_byte
+  19               	pcf8574_byte:
+  20               	.LFB8:
+  21               	.LSM0:
+  22               	.LVL0:
+  23 0000 DF93      		push r29
+  24 0002 CF93      		push r28
+  25 0004 00D0      		rcall .
+  26 0006 CDB7      		in r28,__SP_L__
+  27 0008 DEB7      		in r29,__SP_H__
+  28               	/* prologue: function */
+  29               	/* frame size = 2 */
+  30               	/* stack size = 4 */
+  31               	.L__stack_usage = 4
+  32               	.LSM1:
+  33 000a 6A83      		std Y+2,r22
+  34 000c 8983      		std Y+1,r24
+  35 000e 0E94 0000 		call I2CSendStart
+  36               	.LVL1:
+  37               	.LSM2:
+  38 0012 8981      		ldd r24,Y+1
+  39 0014 880F      		lsl r24
+  40 0016 0E94 0000 		call I2CSendByte
+  41               	.LSM3:
+  42 001a 6A81      		ldd r22,Y+2
+  43 001c 862F      		mov r24,r22
+  44 001e 0E94 0000 		call I2CSendByte
+  45               	.LSM4:
+  46 0022 0E94 0000 		call I2CSendStop
+  47               	/* epilogue start */
+  48               	.LSM5:
+  49 0026 0F90      		pop __tmp_reg__
+  50 0028 0F90      		pop __tmp_reg__
+  51 002a CF91      		pop r28
+  52 002c DF91      		pop r29
+  53 002e 0895      		ret
+  54               	.LFE8:
+  56               		.section	.text.MoboPCF_clear,"ax",@progbits
+  57               	.global	MoboPCF_clear
+  59               	MoboPCF_clear:
+  60               	.LFB7:
+  61               	.LSM6:
+  62               	.LVL2:
+  63               	/* prologue: function */
+  64               	/* frame size = 0 */
+  65               	/* stack size = 0 */
+  66               	.L__stack_usage = 0
+  67               	.LSM7:
+  68 0000 682F      		mov r22,r24
+  69               	.LVL3:
+  70 0002 6095      		com r22
+  71               	.LVL4:
+  72 0004 8091 0000 		lds r24,pcf_data_out
+  73               	.LVL5:
+  74 0008 6823      		and r22,r24
+  75               	.LVL6:
+  76 000a 6093 0000 		sts pcf_data_out,r22
+  77               	.LSM8:
+  78 000e 8091 0000 		lds r24,R+5
+  79 0012 0E94 0000 		call pcf8574_byte
+  80               	.LVL7:
+  81               	/* epilogue start */
+  82               	.LSM9:
+  83 0016 0895      		ret
+  84               	.LFE7:
+  86               		.section	.text.MoboPCF_set,"ax",@progbits
+  87               	.global	MoboPCF_set
+  89               	MoboPCF_set:
+  90               	.LFB6:
+  91               	.LSM10:
+  92               	.LVL8:
+  93               	/* prologue: function */
+  94               	/* frame size = 0 */
+  95               	/* stack size = 0 */
+  96               	.L__stack_usage = 0
+  97               	.LSM11:
+  98 0000 6091 0000 		lds r22,pcf_data_out
+  99               	.LVL9:
+ 100 0004 682B      		or r22,r24
+ 101               	.LVL10:
+ 102 0006 6093 0000 		sts pcf_data_out,r22
+ 103               	.LSM12:
+ 104 000a 8091 0000 		lds r24,R+5
+ 105               	.LVL11:
+ 106 000e 0E94 0000 		call pcf8574_byte
+ 107               	.LVL12:
+ 108               	/* epilogue start */
+ 109               	.LSM13:
+ 110 0012 0895      		ret
+ 111               	.LFE6:
+ 113               		.section	.text.pcf8574_read,"ax",@progbits
+ 114               	.global	pcf8574_read
+ 116               	pcf8574_read:
+ 117               	.LFB9:
+ 118               	.LSM14:
+ 119               	.LVL13:
+ 120 0000 DF93      		push r29
+ 121 0002 CF93      		push r28
+ 122 0004 0F92      		push __tmp_reg__
+ 123 0006 CDB7      		in r28,__SP_L__
+ 124 0008 DEB7      		in r29,__SP_H__
+ 125               	/* prologue: function */
+ 126               	/* frame size = 1 */
+ 127               	/* stack size = 3 */
+ 128               	.L__stack_usage = 3
+ 129               	.LSM15:
+ 130 000a 8983      		std Y+1,r24
+ 131 000c 0E94 0000 		call I2CSendStart
+ 132               	.LVL14:
+ 133               	.LSM16:
+ 134 0010 8981      		ldd r24,Y+1
+ 135 0012 880F      		lsl r24
+ 136 0014 8160      		ori r24,lo8(1)
+ 137 0016 0E94 0000 		call I2CSendByte
+ 138               	.LSM17:
+ 139 001a 0E94 0000 		call I2CReceiveByte
+ 140               	.LVL15:
+ 141               	.LSM18:
+ 142 001e 8983      		std Y+1,r24
+ 143 0020 0E94 0000 		call I2CSend1
+ 144               	.LVL16:
+ 145               	.LSM19:
+ 146 0024 0E94 0000 		call I2CSendStop
+ 147               	.LSM20:
+ 148 0028 8981      		ldd r24,Y+1
+ 149               	/* epilogue start */
+ 150 002a 0F90      		pop __tmp_reg__
+ 151 002c CF91      		pop r28
+ 152 002e DF91      		pop r29
+ 153 0030 0895      		ret
+ 154               	.LFE9:
+ 156               		.section	.text.tmp100,"ax",@progbits
+ 157               	.global	tmp100
+ 159               	tmp100:
+ 160               	.LFB10:
+ 161               	.LSM21:
+ 162               	.LVL17:
+ 163 0000 DF93      		push r29
+ 164 0002 CF93      		push r28
+ 165 0004 0F92      		push __tmp_reg__
+ 166 0006 CDB7      		in r28,__SP_L__
+ 167 0008 DEB7      		in r29,__SP_H__
+ 168               	/* prologue: function */
+ 169               	/* frame size = 1 */
+ 170               	/* stack size = 3 */
+ 171               	.L__stack_usage = 3
+ 172               	.LSM22:
+ 173 000a 8983      		std Y+1,r24
+ 174 000c 0E94 0000 		call I2CSendStart
+ 175               	.LVL18:
+ 176               	.LSM23:
+ 177 0010 8981      		ldd r24,Y+1
+ 178 0012 880F      		lsl r24
+ 179 0014 8160      		ori r24,lo8(1)
+ 180 0016 0E94 0000 		call I2CSendByte
+ 181               	.LSM24:
+ 182 001a 0E94 0000 		call I2CReceiveByte
+ 183 001e 8093 0000 		sts tmp100_data+1,r24
+ 184               	.LSM25:
+ 185 0022 0E94 0000 		call I2CSend0
+ 186               	.LSM26:
+ 187 0026 0E94 0000 		call I2CReceiveByte
+ 188 002a 8093 0000 		sts tmp100_data,r24
+ 189               	.LSM27:
+ 190 002e 0E94 0000 		call I2CSend1
+ 191               	.LSM28:
+ 192 0032 0E94 0000 		call I2CSendStop
+ 193               	/* epilogue start */
+ 194               	.LSM29:
+ 195 0036 0F90      		pop __tmp_reg__
+ 196 0038 CF91      		pop r28
+ 197 003a DF91      		pop r29
+ 198 003c 0895      		ret
+ 199               	.LFE10:
+ 201               		.section	.text.ad5301,"ax",@progbits
+ 202               	.global	ad5301
+ 204               	ad5301:
+ 205               	.LFB11:
+ 206               	.LSM30:
+ 207               	.LVL19:
+ 208 0000 1F93      		push r17
+ 209 0002 DF93      		push r29
+ 210 0004 CF93      		push r28
+ 211 0006 0F92      		push __tmp_reg__
+ 212 0008 CDB7      		in r28,__SP_L__
+ 213 000a DEB7      		in r29,__SP_H__
+ 214               	/* prologue: function */
+ 215               	/* frame size = 1 */
+ 216               	/* stack size = 4 */
+ 217               	.L__stack_usage = 4
+ 218 000c 162F      		mov r17,r22
+ 219               	.LVL20:
+ 220               	.LSM31:
+ 221 000e 8983      		std Y+1,r24
+ 222 0010 0E94 0000 		call I2CSendStart
+ 223               	.LVL21:
+ 224               	.LSM32:
+ 225 0014 8981      		ldd r24,Y+1
+ 226 0016 880F      		lsl r24
+ 227 0018 0E94 0000 		call I2CSendByte
+ 228               	.LSM33:
+ 229 001c 812F      		mov r24,r17
+ 230 001e 8295      		swap r24
+ 231 0020 8F70      		andi r24,lo8(15)
+ 232 0022 0E94 0000 		call I2CSendByte
+ 233               	.LSM34:
+ 234 0026 812F      		mov r24,r17
+ 235 0028 8295      		swap r24
+ 236 002a 807F      		andi r24,lo8(-16)
+ 237 002c 0E94 0000 		call I2CSendByte
+ 238               	.LSM35:
+ 239 0030 0E94 0000 		call I2CSendStop
+ 240               	/* epilogue start */
+ 241               	.LSM36:
+ 242 0034 0F90      		pop __tmp_reg__
+ 243 0036 CF91      		pop r28
+ 244 0038 DF91      		pop r29
+ 245 003a 1F91      		pop r17
+ 246               	.LVL22:
+ 247 003c 0895      		ret
+ 248               	.LFE11:
+ 250               		.section	.text.ad7991_poll,"ax",@progbits
+ 251               	.global	ad7991_poll
+ 253               	ad7991_poll:
+ 254               	.LFB12:
+ 255               	.LSM37:
+ 256               	.LVL23:
+ 257 0000 EF92      		push r14
+ 258 0002 FF92      		push r15
+ 259 0004 1F93      		push r17
+ 260 0006 DF93      		push r29
+ 261 0008 CF93      		push r28
+ 262 000a 0F92      		push __tmp_reg__
+ 263 000c CDB7      		in r28,__SP_L__
+ 264 000e DEB7      		in r29,__SP_H__
+ 265               	/* prologue: function */
+ 266               	/* frame size = 1 */
+ 267               	/* stack size = 6 */
+ 268               	.L__stack_usage = 6
+ 269               	.LSM38:
+ 270 0010 8983      		std Y+1,r24
+ 271 0012 0E94 0000 		call I2CSendStart
+ 272               	.LVL24:
+ 273               	.LSM39:
+ 274 0016 8981      		ldd r24,Y+1
+ 275 0018 880F      		lsl r24
+ 276 001a 8160      		ori r24,lo8(1)
+ 277 001c 0E94 0000 		call I2CSendByte
+ 278               	.LVL25:
+ 279               	.LSM40:
+ 280 0020 EE24      		clr r14
+ 281 0022 FF24      		clr r15
+ 282               	.LVL26:
+ 283               	.L10:
+ 284               	.LBB2:
+ 285               	.LSM41:
+ 286 0024 0E94 0000 		call I2CReceiveByte
+ 287 0028 182F      		mov r17,r24
+ 288               	.LSM42:
+ 289 002a 0E94 0000 		call I2CSend0
+ 290               	.LSM43:
+ 291 002e 0E94 0000 		call I2CReceiveByte
+ 292               	.LSM44:
+ 293 0032 93E0      		ldi r25,lo8(3)
+ 294 0034 E916      		cp r14,r25
+ 295 0036 F104      		cpc r15,__zero_reg__
+ 296 0038 01F0      		breq .L8
+ 297               	.LSM45:
+ 298 003a 8983      		std Y+1,r24
+ 299 003c 0E94 0000 		call I2CSend0
+ 300 0040 8981      		ldd r24,Y+1
+ 301               	.L8:
+ 302               	.LSM46:
+ 303 0042 E12F      		mov r30,r17
+ 304 0044 E295      		swap r30
+ 305 0046 EF70      		andi r30,lo8(15)
+ 306 0048 E430      		cpi r30,lo8(4)
+ 307 004a 00F4      		brsh .L9
+ 308               	.LSM47:
+ 309 004c F0E0      		ldi r31,lo8(0)
+ 310 004e EE0F      		lsl r30
+ 311 0050 FF1F      		rol r31
+ 312 0052 E050      		subi r30,lo8(-(ad7991_adc))
+ 313 0054 F040      		sbci r31,hi8(-(ad7991_adc))
+ 314               	.LSM48:
+ 315 0056 1295      		swap r17
+ 316 0058 107F      		andi r17,lo8(-16)
+ 317 005a 982F      		mov r25,r24
+ 318 005c 9295      		swap r25
+ 319 005e 9F70      		andi r25,lo8(15)
+ 320               	.LSM49:
+ 321 0060 190F      		add r17,r25
+ 322 0062 1183      		std Z+1,r17
+ 323               	.LSM50:
+ 324 0064 90E0      		ldi r25,lo8(0)
+ 325 0066 24E0      		ldi r18,4
+ 326 0068 880F      	1:	lsl r24
+ 327 006a 991F      		rol r25
+ 328 006c 2A95      		dec r18
+ 329 006e 01F4      		brne 1b
+ 330 0070 8083      		st Z,r24
+ 331               	.L9:
+ 332               	.LSM51:
+ 333 0072 0894      		sec
+ 334 0074 E11C      		adc r14,__zero_reg__
+ 335 0076 F11C      		adc r15,__zero_reg__
+ 336               	.LVL27:
+ 337 0078 E4E0      		ldi r30,lo8(4)
+ 338 007a EE16      		cp r14,r30
+ 339 007c F104      		cpc r15,__zero_reg__
+ 340 007e 01F4      		brne .L10
+ 341               	.LBE2:
+ 342               	.LSM52:
+ 343 0080 0E94 0000 		call I2CSend1
+ 344               	.LSM53:
+ 345 0084 0E94 0000 		call I2CSendStop
+ 346               	/* epilogue start */
+ 347               	.LSM54:
+ 348 0088 0F90      		pop __tmp_reg__
+ 349 008a CF91      		pop r28
+ 350 008c DF91      		pop r29
+ 351 008e 1F91      		pop r17
+ 352 0090 FF90      		pop r15
+ 353 0092 EF90      		pop r14
+ 354               	.LVL28:
+ 355 0094 0895      		ret
+ 356               	.LFE12:
+ 430               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 Mobo_I2C_Peripherals.c
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:2      *ABS*:0000003f __SREG__
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:3      *ABS*:0000003e __SP_H__
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:4      *ABS*:0000003d __SP_L__
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:5      *ABS*:00000034 __CCP__
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:6      *ABS*:00000000 __tmp_reg__
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:7      *ABS*:00000001 __zero_reg__
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:19     .text.pcf8574_byte:00000000 pcf8574_byte
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:59     .text.MoboPCF_clear:00000000 MoboPCF_clear
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:89     .text.MoboPCF_set:00000000 MoboPCF_set
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:116    .text.pcf8574_read:00000000 pcf8574_read
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:159    .text.tmp100:00000000 tmp100
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:204    .text.ad5301:00000000 ad5301
+C:\Users\Alex\AppData\Local\Temp\ccrU85se.s:253    .text.ad7991_poll:00000000 ad7991_poll
+
+UNDEFINED SYMBOLS
+I2CSendStart
+I2CSendByte
+I2CSendStop
+pcf_data_out
+R
+I2CReceiveByte
+I2CSend1
+tmp100_data
+I2CSend0
+ad7991_adc

@@ -1,0 +1,1549 @@
+//*********************************************************************************
+//**
+//** Project.........: USB controller firmware for the Softrock 6.3 SDR,
+//**                   enhanced with the 9V1AL Motherboard, F6ITU LPF bank
+//**                   and other essentials to create an all singing and
+//**                   all dancing HF SDR amateur radio transceiver
+//**
+//**                   Initial Core project team: 9V1AL, F6ITU, KF4BQ, KY1K
+//**                   TF3LJ & many more 
+//**
+//** Platform........: AT90USB162 @ 16MHz
+//**
+//** Licence.........: This software is freely available for non-commercial 
+//**                   use - i.e. for research and experimentation only!
+//**
+//** History &
+//** Acknowledgements: The Mobo code is a further development of the firmware
+//**                   initially developed for the ATtiny45 by Thomas Baier, DG8SAQ,
+//**                   and then much refined by F.W. Krom, PE0FKO.
+//**                   The code, although bloated up to about four times its original
+//**                   size to cater for the functions needed for a "full featured"
+//**                   SDR transceiver, still retains the original command
+//**                   structure and is compatible with V 15.12 of the PE0FKO code.
+//**                   Thanks Fred!!!
+//**
+//** 
+//**                   Functionality highlights description:
+//**
+//**                    1) Control of the Si570 Programmable Crystal Oscillator,
+//**                       including "smoothtune" for seamless tuning between small
+//**					   frequency steps (<3500ppm)
+//**                    2) Variable speed VFO, using a rotary encoder, and 9 short/long term memories,
+//**                       using a pushbutton (cycle with short pushes, store with long)
+//**					3) Accomodate different Encoder Resolutions (PPT) through a User command
+//**                    4) CW Paddle inputs
+//**                    5) PTT output
+//**                    6) PTT2 output (connected to SWR protect function)
+//**                    7) Automatic selection between 8 Bandpass filters,
+//**                       with user selectable switchpoints
+//**                    8) Automatic selection between [Default] 8 or 16 Lowpass filters, with user
+//**                       selectable switchpoints, by controlling 2x external PCF8574 8 bit GPIO extenders.
+//**                       Alternately, it can also provide direct control of 4 to 8 Lowpass filters
+//**                       through a 3 bit directly connected GPIO
+//**                       port  (Mobo 4.3 P1 pins 4-6).
+//**                    9) Measurement of Input voltage, PA current, Power forward and Power refleced 
+//**                       (uses external Power/SWR bridge)
+//**                   10) Hi-SWR protect function, when using an external Power/SWR bridge
+//**                       (automatically lower PA bias and assert an external signal)
+//**                   11) PEP indication for power output, shows the highest measured value within a
+//**                       user adjustable time window of up to 2 seconds (10 samples per second).
+//**                   12) Power Amplifier (PA) Temperature measurement and automatic Transmit Disable
+//**                       on a high temperature condition
+//**                   13) Cooling FAN control, using two temperature trigger settings, one for on and
+//**                       another one for off.
+//**                   14) Manual PA Bias setpoint control, switching between different bias setpoints
+//**                       (such as between classes A and AB), and automatic calibration of the
+//**                       PA bias current
+//**                   15) 20x4 or 40x2 LCD display with analog-style bargraphs for enhanced power output 
+//**                       and SWR visualisation.
+//**                   16) optional 16x2 and 20x2 LCD display alternatives with analog-style bargraphs for
+//**                       power output and SWR visualisation.
+//**                   17) an alternative optional 16x2 LCD display without the bargraphs, providing Frequency
+//**                       readout, Power/SWR metering and status diplay (RX/TX/hi-SWR/hi-TMP/Mem-store...)
+//**                   18) LCD frequency display offset option, for readout of the actual transmit/receive
+//**                       frequency, when using PowerSDR-IQ
+//**                   19) Read/Write a byte from/to external I2C connected General Purpose IO extenders
+//**                       PCF8574 (filters, attenuators, amplifiers)
+//**
+//**
+//** Initial version.: 2009-09-09, Loftur Jonasson, TF3LJ
+//**
+//**
+//** History.........: 2009-09-09, Version 1.0 & USB Protocol V. 16.10
+//**
+//**                   2009-09-20, Version 1.01 & USB Protocol V. 16.10
+//**                   (Minor update.  Commands 0x18, 19, 1a & 1b made optional,
+//**                    Command 0x67 selected as default, Commands 0x6e/6f selected
+//**                    as default, this may be useful during beta tests.
+//**                    LPF filter selection available both through PD1-PD4 and by
+//**                    MegaFilter Mobo style I2C comms.
+//**                    Rough calibration of power meter, diode offset reduced to 100mV.
+//**                    PEP indication now samples within a 2 second window.
+//**                    A few edits in Readme.txt)
+//**
+//**                   2009-10-23, Version 1.02 & USB Protocol V. 16.11
+//**                   (Command 0x67 replaced with Command 0x36
+//**                    PEP measurements are now cleared during RX, previously there was
+//**                    residual window of measurement from last TX.
+//**                    Command 0x66 expanded with Index 6 for adjustible PEP measurement
+//**                    period (1 = not PEP and up to 20 for PEP within a 2 second window),
+//**                    default PEP window is set at 5 (0.5 seconds).
+//**                    Variable Speed Rotary Encoder VFO function added.
+//**                    Optional Direction Sense added to the Variable Speed VFO funtion.
+//**                    I2C queueing removed, not necessary.  Band Sub/Mul function bugs
+//**                    corrected.  
+//**                    Power Bargraph now works for values higher than 15W.
+//**                    Some alternate display options added for lines 3/4 when using a 20x4
+//**                    display and similar with 40x2.
+//**                    Readme file edits.  Some other minor things...)
+//**
+//**                   2009-12-30, Version 1.03 & USB Protocol V. 16.11
+//**                   (Command 0x36, Index 10 added (LCD frequency offset during RX to support
+//**                    accurate frequency readout when using PowerSDR-IQ.
+//**                    Option for direct control of PCF8574 now disabled by default.
+//**					However, it can easily be re-activated.
+//**                    Default PEP window set back to 10 (1 second window).
+//**                    Added a new #define to reverse the Rotary Encoder VFO direction.
+//**                    Code cleanup to free a few hundred bytes (particularly PCF8574 I2C routines).
+//**                    Option for TX filter controls on the CPU PortD now disabled.  If the user needs
+//**                    direct control signals for LPF swithcing, then it is better to use the new
+//**                    PCF_FILTER_IO or M0RZF_FILTER_IO LPF options described below. 
+//**                    Added a new #define PCF_FILTER_IO to support switching of up to 8 low pass
+//**                    filters through the 3 previously unused bits on the onboard PCF8574 chip.
+//**                    Added a new #define M0RZF_FILTER_IO to support low pass filter switching on the
+//**                    M0RZF 20W ampt hrough the 3 previously unused bits on the onboard PCF8574 chip.
+//**                    Code for Command 0x43 partially in place, to support modification of
+//**                    the USB Serial Number descriptor.  However, this is not fully
+//**                    implemented, due to lack of pgm space (RAM) resources.
+//**                    Rearrangement of EEPROM memory data structure.
+//**                    Some edits in Readme.txt
+//**
+//**                   2010-01-23, Version 1.03-01 & USB Protocol V. 16.11
+//**                   (Minor update.  A couple of bug corrections, mainly to do with 
+//**                    Add/Subtract and Multiply functions (Cmd 0x31).  This update
+//**                    does not affect the precompiled HEX files with version 1.03 (2009-12-30))
+//**
+//**                   2010-02-28, Version 1.04 & USB Protocol V. 16.11
+//**                   (Minor update.  One potential bug correction, to do with SWR measurements
+//**                    at very low power.  SWR is now calculated once the Vforward input value
+//**                    reaches a value of 32/4096 (appr 36mW).  At lower values, the SWR is forced
+//**                    to 1:1)
+//**
+//**                   2010-04-30, Version 1.05 & USB Protocol V. 16.12
+//**                   (Two releases, AT90USB162 release with all essential features and a separate
+//**                    ATmega32u2 release, with a number of additional features enabled, such as
+//**                    scrambled order of filters, frequency subtract & multiply, legacy commands, etc.
+//**                    The AT90USB162 version uses WinAVR20080430 and LUFA090810.
+//**                    The ATmega32u2 version uses a different makefile, LUFA091223 and a slightly
+//**                    patched WinAVR20100110 (contains only partial support for the ATmega32u2)
+//**                    or potentialy an unpatched later version of WinAVR (not tested yet).
+//**                    Legacy commands 0x15,0x16,0x20 and 0x40 made Optional.  New command 0x67 added,
+//**                    enabling user settable value for the Rotary Encoder Resolution (resolvable
+//**                    states per revolution).  This command is used to set the correct value for 1kHz
+//**                    per revolution, corresponding dual speed variables are automatically derived.
+//**                    New Command 68 added, enabling PSDR-IQ RX frequency display offset.  Replaces
+//**                    Cmd 0x36 index 10 and is bidirectional.
+//**                    Command 0x36 suppressed (still optional).
+//**                    Fan Control setpoints added to Command 0x64 (Hi Tmp trigger for Fan On, default
+//**                    45 deg C, Lo Tmp trigger for Fan Off, default 40 deg C, and FAN bit select).
+//**                    Three different Fan Control options. PortD Output, builtin PCF8574 output,
+//**                    or external PCF8574 output.  Also I2C address for PCF Fan control added to
+//**                    Cmd 0x41, index 7.
+//**                    TX Filter options tidied up.  Now the preferred option is 8 Filters through an
+//**                    external PCF8574 (connected over I2C bus).  All other options still retained.
+//**                    Commands 0x6e and 0x6f, User Write/Read to any external PCF8574 has been
+//**                    enabled as default.
+//**                    Mobo-Features.h contains new automatic features selection macros, to simplify
+//**                    generation of standardized precompiled HEX images.)
+//**
+//**                   2010-05-29, Version 1.06 & USB Protocol V. 16.12
+//**                   (Two releases, AT90USB162 release with all essential features and a separate
+//**                    ATmega32u2 release, with a number of additional features enabled, such as
+//**                    scrambled order of filters, frequency subtract & multiply, legacy commands, etc.
+//**                    The AT90USB162 version uses WinAVR20080430 and LUFA090810.
+//**                    The ATmega32u2 version uses a different makefile, LUFA091223 and a slightly
+//**                    patched WinAVR20100110 (contains only partial support for the ATmega32u2)
+//**                    or potentialy an unpatched later version of WinAVR (not tested yet).
+//**                    Super slow poll of I2C during RX, once every 10s.
+//**                    Rewrite of 20x4 and 40x2 LCD routines for RF noise reduction, no LCD traffic
+//**                    unless update to display is needed.  Support for 16x2 and 20x2 LCDs dropped,
+//**                    however the old routines are still retained and can be enabled.
+//**                    Autosense if TMP101 rather than TMP100.
+//**                    TMP alarm function disabled if TMP100 absent, output read as signed integer,
+//**                    255 = -1deg C).
+//**
+//**                   2011-01-15, Version 1.07 & USB Protocol V. 16.13
+//**                    (Two separate releases, one for the AT90USB162, one for the ATmega32u2.
+//**                     In previous versions, bits 2 and 6 (of 8) in the byte returned by USB commands
+//**                     0x50 and 0x51 indicated the state of the two CW/PTT inputs (dit and dash).
+//**                     In this version, these commands have been expanded to also indicate the current
+//**                     TX/RX state through bit 7 (of 8).  This is useful when using more than one
+//**                     piece of software concurrently in a co-ordinated manner, such as sdrshell and
+//**                     fldigi, as set up by Alex. In addition, the ATmega32u2 update contains some
+//**                     frivolous LCD display gymnastics at the startup, shows whether startup is
+//**                     "Init OK"  or whether an "EEPROM Reset" is performed".) 
+//**
+//*********************************************************************************
+
+
+
+This version is released with 10 precompiled HEX files, each with a different set of options
+selected.  
+
+Note that the LCD versions will not work unless a LCD display is connected.
+
+The standard preferred configuration, contained in HEX file images 3 and 4 below,  includes a 20x4
+LCD and TX Low Pass Filter control through an external I2C connected PCF8574 board, providing control
+of 8 switchable LPFs (up to 16 possible).  This version also includes control of an external Cooling
+Fan, using bit 5 (P1 pin 6) of the onboard PCF8574 I/O extender.
+
+HEX file image 1 is a no-frills image, for those that do not connect an LCD or a PO/SWR board.
+
+Hex file image 2 contains a fully functional version of the firmware, similar to 3, less the LCD
+display.
+
+A limited number of other LCD and LPF configurations have also been made available below as precompiled
+HEX file images (including 4 alternative LPF control configurations, when using a 20x4 LCD).  
+
+Further potential configurations are also available and can be accomodated through modified settings
+in the features selection menu in the Mobo.h file and a recompilation of the code.  This includes
+different combinations off LPF control, LCD configuration, and a variety of other functionality features.
+
+Ideally, the different features would be user selectable through USB commands, however due to program
+size limitations of the AT90USB162, this was not possible.
+
+Different features can be selected in the Mobo.h file.  A description of the prerequisites for
+compilation of the firmware can be found on the web-page:
+
+http://sites.google.com/site/lofturj
+
+---------------------------------------------------------------------------------------------------
+
+
+Precompiled HEX images included in this release:
+------------------------------------------------
+
+HEX Images for implementations without LCD (Liquid Crystal Display):
+--------------------------------------------------------------------
+
+ 1) Mobo_01_BasicFunction.hex               Basic functionality, no LCD, no Power/SWR 
+                                            measurements.
+                                            8x TX Filter switching through an external PCF8574.
+                                            Cooling FAN control provided through the internal PCF8574,
+                                            output bit 5 (P1 pin 6).
+
+
+ 2) Mobo_02_PWRSWR_SWRalarm.hex             Basic functionality, no LCD, but including
+                                            PWR/SWR measurements and alarm functionality.
+                                            8x TX Filter switching through an external PCF8574.
+                                            Cooling FAN control provided through the internal PCF8574,
+                                            output bit 5 (P1 pin 6).
+
+
+HEX Images for implementations with a 20x4 LCD:
+-----------------------------------------------
+
+ 3) Mobo_03_20x4_LCD_PWRSWR_SWRalarm_VFO.hex    
+                                            Basic functionality, including 20x4 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            8x TX Filter switching through an external PCF8574.
+                                            Cooling FAN control provided through the internal PCF8574,
+                                            output bit 5 (P1 pin 6).
+
+ 4) Mobo_04_20x4_LCD_PWRSWR_SWRalarm_VFO_F.hex
+                                            Basic functionality, including 20x4 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            8x TX Filter switching through an external PCF8574.
+                                            Cooling FAN control provided through the internal PCF8574,
+                                            output bit 5 (P1 pin 6).
+                                            Temperature is displayed in degrees Fahrenheit.
+
+ 5) Mobo_05_20x4_LCD_PWRSWR_SWRalarm_VFO_P1LPF.hex    
+                                            Basic functionality, including 20x4 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            Alternate 3 bit BCD control for LPF enabled (P1 pins 3-5).
+                                            Cooling FAN control provided through an external PCF8574,
+                                            as all bits on the internal PCF extenders are in use for
+                                            BPF/LPF control.
+
+ 6) Mobo_06_20x4_LCD_PWRSWR_SWRalarm_VFO_P1LPF_F.hex
+                                            Basic functionality, including 20x4 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            Alternate 3 bit BCD control for LPF enabled (P1 pins 3-5).
+                                            Cooling FAN control provided through an external PCF8574,
+                                            as all bits on the internal PCF extenders are in use for
+                                            BPF/LPF control.
+                                            Temperature is displayed in degrees Fahrenheit.
+
+
+ 7) Mobo_07_20x4_LCD_PWRSWR_SWRalarm_VFO_P1M0RZF.hex    
+                                            Basic functionality, including 20x4 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            Alternate 3 bit control for M0RZF style 4 x LPF enabled
+                                            (P1 pins 3-5).
+                                            Cooling FAN control provided through an external PCF8574,
+                                            as all bits on the internal PCF extenders are in use for
+                                            BPF/LPF control.
+
+
+ 8) Mobo_08_20x4_LCD_PWRSWR_SWRalarm_VFO_P1M0RZF_F.hex
+                                            Basic functionality, including 20x4 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            Alternate 3 bit control for M0RZF style 4 x LPF enabled
+                                            (P1 pins 3-5).
+                                            Cooling FAN control provided through an external PCF8574,
+                                            as all bits on the internal PCF extenders are in use for
+                                            BPF/LPF control.
+                                            Temperature is displayed in degrees Fahrenheit.
+
+
+HEX Images for implementations with a 40x2 LCD:
+-----------------------------------------------
+
+ 9) Mobo_09_40x2_LCD_PWRSWR_SWRalarm_VFO.hex    
+                                            Basic functionality, including 40x2 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            8x TX Filter switching through an external PCF8574.
+                                            Cooling FAN control provided through the internal PCF8574,
+                                            output bit 5 (P1 pin 6).
+
+
+10) Mobo_10_40x2_LCD_PWRSWR_SWRalarm_VFO_F.hex
+                                            Basic functionality, including 40x2 LCD, Power/SWR
+                                            measurements, bargraphs and alarm functionality.
+                                            Also including Variable rate Rotary Encoder VFO,
+                                            and bandswitcher between the 9 HF bands.  
+                                            Also includes 9 EEPROM storable frequency memories.
+                                            8x TX Filter switching through an external PCF8574.
+                                            Cooling FAN control provided through the internal PCF8574,
+                                            output bit 5 (P1 pin 6).
+                                            Temperature is displayed in degrees Fahrenheit.
+
+
+
+
+---------------------------------------------------------------------------------------------------
+
+Notes on using external PCF8574 for input/output control:
+
+---------------------------------------------------------------------------------------------------
+
+The PCF8574 chip is capable of I/O in both directions.  It connects to the Mobo through the I2C bus.
+Through Commands 0x6e and 0x6f, described below, it is possible to control periphereals through
+externally connected PCF8574 boards.  A typical control sequence would be as follows:
+
+Cmd 0x6f, index [I2C address];  reads PCF8574 inputs.
+
+If we are interested in controlling, say bit 7 (out of 0-7) to switch a RX pre-amplifier, and leave the
+others bits untouched, then we would do: 
+
+pre-amplifier on = 0b1000000, or pre-amplifier off = 0b00000000
+
+inputs_masked = inputs AND 0b0111111, clear output bit, while retaining current status of other bits.
+
+output = inputs_masked + pre-amplifier (on or off)
+
+Cmd 0x6e, index [I2C address], value [output]; write the new value out, switching the pre-amplifier.
+The result back from Cmd 0x6e should be the same as the output value written.
+---------------------------------------------------------------------------------------------------
+
+In the case of firmware versions where the Cooling Fan Control is provided through an external
+PCF extender with default I2C address of 0x38, (HEX images 5, 6, 7, 8), bit 0 (0b00000001) is used 
+for control of the cooling fan.
+
+---------------------------------------------------------------------------------------------------
+
+
+---------------------------------------------------------------------------------------------------
+// Pin assignment (defined in the Mobo.h and LCD.h files):
+
+// PB0 = CW input 1
+// PB1 = CW input 2
+// PB2 = Loop Thru LED (watchdog) or USB traffic LED
+// PB3 = PTT OUT LED or Loop Thru LED (watchdog)
+// PB4 = LCD D4
+// PB5 = LCD D5
+// PB6 = LCD D6
+// PB7 = LCD D7
+
+// PC0 = -0- No PC0 available in normal config of AT90USB162
+// PC1 = -0- No PC1 available in normal config of AT90USB162
+// PC2 = LCD control RS
+// PC3 = -0- No PC3 available in normal config of AT90USB162
+// PC4 = LCD control RW
+// PC5 = LCD control E
+// PC6 = I2C SDA to Si570
+// PC7 = I2C SCL to Si570
+
+// If DDRD_TX_FILTER_IO and/or Rotary Encoder are defined:
+// (else all of Port D unassigned/controllable through Command 0x15)
+// DDRD_TX_FILTER_IO pins:
+// PD0 = Unassigned/User bit, controllable through [Optional] Command 0x15
+//        alternately [Option] [normally disabled] Cooling Fan control output
+// PD1 = [Option] TX LP filter bit 0
+// PD2 = [Option] TX LP filter bit 1
+// PD3 = [Option] TX LP filter bit 2
+// PD4 = [Option] TX LP filter bit 3
+// If Rotary Encoder VFO pins:
+// (if not, then User bits, controllable through [Optional] Command 0x15)
+// PD5 = Rotary Encoder, Phase B
+// PD6 = Rotary Encoder, Phase A
+// PD7 = Rotary Encoder, Push button
+
+// Mobo PCF8574 chip (normally at I2C addr 63 (0x3f))
+// P0 = Onboard BPF addr 0
+// P1 = Onboard BPF addr 1
+// P2 = Onboard BPF addr 2
+// P3 = [Option] addr 0 of PCF_FILTER_IO or M0RZF_FILTER_IO, external LPF switching
+// P4 = [Option] addr 1 of PCF_FILTER_IO or M0RZF_FILTER_IO, external LPF switching
+// P5 = [Option] addr 2 of PCF_FILTER_IO or M0RZF_FILTER_IO, external LPF switching
+//      [alternate use Option, normally active if external LPF control] Cooling Fan control
+// P6 = Secondary PTT, high = active (SWR Protect), reversible, see Mobo.h
+// P7 = PTT out, high = active
+
+// LPF Mobo PCF8574 chip pair  (normally at I2C addresses 57, 58 (0x39, 0x3a))
+// (only one may be enabled, based on configuration)
+// P0 = 160m filter
+// P1 = 80m filter
+// P2 = 40m filter
+// P3 = 30m filter
+// P4 = 20m filter
+// P5 = 18m filter
+// P6 = 15m filter
+// P7 = 10m filter
+// P8 = unassigned
+// P9 = unassigned
+// P10= unassigned
+// P11= unassigned
+// P12= unassigned
+// P13= unassigned
+// P14= unassigned
+// P15= unassigned
+
+// EXT F PCF8574  (normally at I2C addr 56 (0x38))
+// used for cooling fan control in HEX configs which do not provide the cooling fan control
+// through the internal PCF8574
+// P0 = user accessible, [Option] Cooling Fan control
+// P1 = user accessible/multipurpose
+// P2 = user accessible/multipurpose
+// P3 = user accessible/multipurpose
+// P4 = user accessible/multipurpose
+// P5 = user accessible/multipurpose
+// P6 = user accessible/multipurpose
+// P7 = user accessible/multipurpose {RX pre-amplifier switching}
+
+---------------------------------------------------------------------------------------------------
+
+
+
+
+
+Note:  A substantial part of the text below is a copy/paste from Fred Krom's (PE0FKO) Readme.txt file
+for his Firmware release version 15.12, developed to support the Softrock 9.0 receiver.
+Descriptions of new and/or modified USB commands have been added.  2009-08-23...2009-10-23...
+2010-01-08, 2010-04-30 TF3LJ, 2011-01-15 TF3LJ
+
+
+***********************************************************************************
+*                                                                                 *
+*               USB Protocol Description for the Mobo 4.3 firmware                *
+*             version 1.05,  implementing v 16.13 of the USB protocol             *
+*                   (version number co-ordinated with PE0FKO)                     *
+*                                                                                 *
+*    This protocol, while including a number of extensions, is intended to be     *
+*               compatible with the PE0FKO ATtiny45/80 code V15.13                *
+*                                                                                 *
+***********************************************************************************
+
+Implemented functions:
+----------------------
+
+The 162 column below shows functions implemented in the Mobo 4.3 firmware v1.05, on the AT90USB162
+The 32u column below shows functions implemented in the Mobo 4.3 firmware v1.05, on the ATmega32u2
+
+For comparison, the 168 column below shows functions implemented in my ATmega168 firmware v1.0,
+the SAQ column shows commands implemented by the DG8SAQ ATiny 45 V 1.4 firmware
+and the FKO column shows the commands implemented by the PE0FKO ATtiny 45/85 V 15.12 firmware
+
+                 +-------+
+                 |MOBO4.3|
++----+---+---+---+---+---+---+-----------------------------------------------------
+|Cmd |SAQ|FKO|168|162|32u| IO| Function
++0x--+---+---+---+---+---+---+-----------------------------------------------------
+| 00 | * |   |   |   |   | I | Echo value variable
+| 00 |   | * | * | * | * | I | Get Firmware version number
+| 01 | * | * | ++| +-| ++| I | [OPTION] PORTD, set port directions (use commands 0x15/16)
+| 02 | * | * | ++| +-| ++| I | [OPTION] read port                  (use commands 0x15/16)
+| 03 | * | * | ++| +-| ++| I | [OPTION] read port states           (use commands 0x15/16)
+| 04 | * | * | ++| +-| ++| I | [OPTION] set port outputs           (use commands 0x15/16)
+| 05 | * |   |   |   |   | I | [DO NOT USE] send I2C start sequence
+| 06 | * |   |   |   |   | I | [DO NOT USE] send I2C stop sequence
+| 07 | * |   |   |   |   | I | [DO NOT USE] send byte to I2C
+| 08 | * |   |   |   |   | I | [DO NOT USE] send word to I2C
+| 09 | * |   |   |   |   | I | [DO NOT USE] send dword to I2C
+| 0A | * |   |   |   |   | I | [DO NOT USE] send word to I2C with start and stop sequence
+| 0B | * |   |   |   |   | I | [DO NOT USE] receive word from I2C with start and stop sequence
+| 0C | * |   |   |   |   | I | [DO NOT USE] modify I2C clock
+| 0D |   |   |   |   |   | I | [DO NOT USE] read OSCCAL to "value"
+| 0E |   |   |   |   |   | I | [DO NOT USE] Write "value" to OSCCAL
+| 0F | * | * | * | * | * | I | Reset uController
+| 10 | * |   |   |   |   | I | [DO NOT USE] EEPROM write byte value=address, index=data
+| 11 | * |   |   |   |   | I | [DO NOT USE] EEPROM read byte "value"=address
+| 13 |   |   |   |   |   | I | [DO NOT USE] return usb device address
+| 15 |   | * | + | +-| ++| I | [OPTION] [enabled in ATmega32u2] Set PORTD with mask and data bytes, and perform cmd 0x16
+| 16 |   | * | + | +-| ++| I | [OPTION] [enabled in ATmega32u2] PORTD, return the I/O p-in value
+| 17 |   | * | + | + | ++| I | Read the BPF and LPF Filter cross over points (8+16 values) and set one point
+| 18 |   | * | * | *-| *+| I | [OPTION] Set the Band Pass Filter Address for one band: 0, 1, 2... 7 (3bit value)
+| 19 |   | * | * | *-| *+| I | [OPTION] Read the Band Pass Filter Addresses for bands 0, 1, 2... 7  (3bit value)
+| 1a |   |   | + | +-| ++| I | [OPTION] Set the TX Low Pass Filter Address for one LPF band: 0, 1, 2... 15 (4bit value)
+| 1b |   |   | + | +-| ++| I | [OPTION] Read the TX Low Pass Filter Addresses for LPF bands 0, 1, 2... 15  (4bit value)
+| 20 | * | * | * | *-| *+| I | [OPTION] Write byte to Si570 register
+| 21 | * |   |   |   |   | I | [DO NOT USE] SI570: read byte to register index (Use command 0x3F)
+| 22 | * |   |   |   |   | I | [DO NOT USE] SI570: freeze NCO (Use command 0x20)
+| 23 | * |   |   |   |   | I | [DO NOT USE] SI570: unfreeze NCO (Use command 0x20)
+| 30 | * | * | * | * | * | O | Set frequency by register and load Si570
+| 31 |   | * | * |*+-|*++| O | [OPTION] Write the frequency/band subtract multiply to the eeprom (values for 4 separate bands)
+| 32 | * | * | + | + | + | O | Set frequency by value and load Si570 (if Rotary Encoder VFO, then 10 frequencies accessible)
+| 33 | * | * | * | * | * | O | write new crystal frequency to EEPROM and use it.
+| 34 |   | * | + | + | + | O | Write new startup frequency to eeprom (if Rotary Encoder VFO, then 10 memories accessible)
+| 35 |   | * | * | * | * | O | Write new smooth tune to eeprom and use it.
+| 36 |   |   | + | +-| +-| O | [OPTION] [normally disabled] Modify Rotary Encoder Resolution & LCD offset for PSDR-IQ during RX
+| 39 |   | * | * |*+-|*++| I | [OPTION] Return the frequency/band subtract multiply (values for 4 separate bands)
+| 3A |   | * | * | + | + | I | Return running frequency
+| 3B |   | * | * | * | * | I | Return smooth tune ppm value
+| 3C |   | * | * | + | + | I | Return the startup frequency (if Rotary Encoder VFO, then returns the currently active memory)
+| 3D |   | * | * | * | * | I | Return the XTal frequency
+| 3E |   |   |   |   |   | I | [DEBUG] read out calculated frequency control registers
+| 3F | * | * | * | * | * | I | Read out frequency control registers
+| 40 | * | * | * | *-| *+| I | [OPTION] Return I2C transmission error status
+| 41 | * |   |   |   |   | I | [DO NOT USE] set/reset init freq status
+| 41 |   | * | + | + | + | I | Read/Modify the I2C addresses (Si570, on and off-board PCF8574 devices, TMP100, AD5301, AD7991). Reset uController
+| 43 |   | * | * |   |   | I | Change USB SerialNumber ID
+| 50 | * | * | + | + | + | I | Set TX state and Read CW key inputs
+| 51 | * | * | + | + | + | I | Read CW key inputs
+| 60 |   |   | + |   |   | I | [N/A in this version] Feature Select (LCD display on/off, Rotary Encoder on/off)
+| 61 |   |   | + | + | + | I | Read analog inputs (I_in, P_out, P_ref, V_in, Tmp)
+| 64 |   |   |   | + | + | I | Read/Modify the PA High Temperature limit, Cooling Fan On/Off limits, and optionally select external PCF control bit
+| 65 |   |   |   | + | + | I | Read/Modify PA bias setting related values, 5 items 
+| 66 |   |   | + | + | + | I | Read/Modify SWR measurement and SWR alarm related values 6 items 
+| 67 |   |   |   | ++| ++| I | [OPTION] Set the Encoder Resolvable States per Revolution for 1kHz tune per Rev
+| 68 |   |   |   | ++| ++| I | [OPTION] Display a fixed frequency offset during RX only.
+| 6e |   |   |   | ++| ++| I | [OPTION] Write a Byte to (PCF8584) GPIO Extender 
+| 6f |   |   |   | ++| ++| I | [OPTION] Read a Byte from (PCF8584) GPIO Extender  
+| 7f |   |   | + |   |   | I | [N/A in this version] Direct commands to I2C connected LCD display (address change, contrast/brightness)
+
++:  New or modified function 
+Second +/-:  Optional, + = Normally enabled, - = Normally disabled
+
+[OPTION] indicates that this feature may be selected during compile time (#define Switch in Mobo.h)
+
+Due to the limited memory available in the AT90USB162 microcontroller, a number of available {bells and whistles}
+type features are offered as compile time options, to select one of those features, another features may have to be
+deselected.
+
+
+Commands:
+---------
+All the commands are working with the "usb_control_msg" command from the LibUSB open source project.
+See "libusb-win32-device-bin-0.1.12.1" from http://sourceforge.net/projects/libusb-win32/
+
+To use the library, include the header file ./include/usb.h in your project and add the 
+library ./lib/*/libusb.lib for your linker.
+
+Open the device with usb_open(...) with the VID & PID to get a device handle.
+
+  int usb_control_msg(usb_dev_handle *dev, int requesttype, int request,
+                      int value, int index, char *bytes, int size,
+                      int timeout);
+
+    requesttype:    Data In or OUT command (table IO value)
+        I = USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN
+        O = USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT
+
+    request: The command number.
+    value:   Word parameter 0
+    index:   Word parameter 1
+    bytes:   Array data send to the device (OUT) or from the device (IN)
+    size:    length in bytes of the "bytes" array.
+
+
+In case of an unknown command, the firmware will return a 1 (one), if there is a bytes array specified it 
+returns the byte 255.
+
+
+In the next examples I will use two subroutines that will call the usb_control_msg function, it make's 
+the examples more readable:
+
+int usbCtrlMsgIN(int request, int value, int index, char *bytes, int size)
+{
+  return usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN,
+                         request, value, index, bytes, size, 500);
+}
+
+int usbCtrlMsgOUT(int request, int value, int index, char *bytes, int size)
+{
+  return usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT,
+                         request, value, index, bytes, size, 500);
+}
+
+
+
+
+Command 0x00:
+-------------
+This call will return the version number of the firmware. The high byte is the version major and the
+low byte the version minor number.
+
+It is a bit tricky for the previous versions because they used a "word echo command" on command 0x00.
+If the call will be done with the "value" parameter is set to 0x0E00 it will return version 14.0 for the
+original DG8SAQ software. (Also my previous software will return the version 14.0, the owner had to
+upgrade or not use it). There is also a other way to check the type of software, use the USB Version 
+string for that.
+
+Code sample:
+    uint16_t version;
+    r = usbCtrlMsgIN(0x00, 0x0E00, 0, &version, sizeof(version));
+	// if the return value is 2, the variable version will give the major and minor
+	// version number in the high and low byte.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x00
+    value:           0x0E00
+    index:           Don't care
+    bytes:           Version word variable
+    size:            2
+
+
+Command 0x01:
+-------------
+[OPTION] [enabled in ATmega32u2]  can be enabled by #define switch in Mobo.h file
+Set pin directions, PORT D.
+Legacy command, use I/O function 0x15/0x16 instead
+
+
+Command 0x02:
+-------------
+[OPTION] [enabled in ATmega32u2]  can be enabled by #define switch in Mobo.h file
+Read ports, PORT D.
+Legacy command, use I/O function 0x15/0x16 instead
+
+
+Command 0x03:
+-------------
+[OPTION] [enabled in ATmega32u2]  can be enabled by #define switch in Mobo.h file
+Read port states, PORTD.
+Legacy command, use I/O function 0x15/0x16 instead
+
+
+Command 0x04:
+-------------
+[OPTION] [enabled in ATmega32u2]  can be enabled by #define switch in Mobo.h file
+Set ports, PORTD.
+Legacy command, use I/O function 0x15/0x16 instead
+
+
+Command 0x0F:
+-------------
+Restart the board (done by Watchdog timer).
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x0F
+    value:           Don't care
+    index:           Don't care
+    bytes:           NULL
+    size:            0
+
+
+Command 0x15:
+-------------
+[OPTION] [enabled in ATmega32u2] can be enabled by #define switch in Mobo.h file
+Set the I/O bits of PORT D.
+It also reads and returns the PORT D inputs (like command 0x16).
+
+There are two values for every I/O bit, the data direction and data bits.
++-----+------+----------------------
+| DDR | DATA | PIN Function
++-----+------+----------------------
+|  0  |   0  | input
+|  0  |   1  | input internal pullup
+|  1  |   0  | output 0
+|  1  |   1  | output 1
++-----+------+----------------------
+
+In case of the enabled ABPF no change of I/O will be done.
+
+Code sample:
+    uint16_t INP;
+    r = usbCtrlMsgIN(0x15, 0x02, 0x02, &INP, sizeof(INP));
+    // Set P2 to output and one!
+    // Use P1 as input, no internal pull up R enabled.
+    // Read the input in array INP[], only bit0 and bit1 used by this hardware.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x15
+    value:           Data Direction Register
+    index:           Data register
+    bytes:           PIN status (returned)
+    size:            2
+
+
+Command 0x16:
+-------------
+[OPTION] [enabled in ATmega32u2] can be enabled by #define switch in Mobo.h file
+Read the PORT D inputs
+
+Code sample:
+    uint16_t INP;
+    r = usbCtrlMsgIN(0x16, 0, 0, &INP, sizeof(INP));
+    // Read the input word INP, only bit0 and bit1 used by SoftRock V9 hardware.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x16
+    value:           Don't care
+    index:           Don't care
+    bytes:           PIN status (returned)
+    size:            2
+
+
+Command 0x17:
+-------------
+Read the Filter cross over points and set one point.
+
+This command can control 2 banks of filters.  Typically the first bank is the Rx and Tx BPF
+used in the QSD and QSE stages.  The second bank is the Tx LPF between the PA and the antenna
+output.  The # of crossover points of the two banks of filters can be different.  For example,
+for the Softrock v6.3 and v9.0, the first bank is usually 4 bands (160m, 80/40m, 30/17/20m,
+15/12/10m).  The second bank can be 6 bands or less, but can also go up to 7, 8, 12 or even 16!
+
+For the Mobo 4.3 the first bank is 8 bands (e.g. 160m, 80m, 40m, 30m, 20m, 17m, 15m, 12/10m)
+For the Mobo 4.3 the second bank is usually 8 or 16 bands, (can be 4, 8 or 16 bands).
+
+The index is used to specify the particular filter crossover point.  The index of the 1st bank
+starts from 0, and ends at the last crossover point.  For example, if there are 4 bands, then
+there will be 3 crossover points: 0, 1, and 2.  Index 3 is used as a boolean flag, specifying
+whether this filter bank is enabled or disabled (for automatic band pass filter ABPF function).
+
+The index of the 2nd filter bank starts from 256, and ends at the last crossover point, which
+in case of the Mobo 4.3 Firmware may be as high as 271.  For example, if there are 6 LPF's, then
+there will be 5 crossover points, with index 256, 257, 258, 259, and 260.  The higher, unused
+crossover points would typically be set with the same or a higher value than the one in 260.  
+The last index, or index 271 is used as a boolean flag, specifying whether this filter bank is
+enabled or disabled (for automatic switching).  If "disabled", it usually means the filter is set
+for "all pass" or bypassed.
+
+The first call to this command should be used to find out how many crossover points there are.
+Call with an index of 255 for the 1st filter bank, and an index of 256+255 for the 2nd filter
+bank.
+
+  filter_number_of_bytes = usbCtrlMsgIN(0x17, 0, 255, FilterCrossOver, sizeof(FilterCrossOver));
+
+If there are 4 filters (3 crossover points), then the filter_number_of_bytes returned will be 8.
+(Each crossover point is 2 bytes.  Thus there will be 6 bytes.  Following that another 2 bytes will
+be for the boolean flag, making a total of 8).
+
+If ther are 6 filters (5 crossover points), there filter_number_of_bytes returned will be 12.
+
+Subsequent calls to this command can then be used to:
+
+1.  set one of the filter crossover points by specifying the index
+2.  enable/disable the filter bank by specifying the last index (for the boolean flag)
+3.  read the cross over points only - all of them of one bank at once, by specifying 255 (1st bank)
+    or 256+255 (2nd bank).
+
+(Note that in actions 1 and 2 above, the cross over points are also read out after the completion
+of the action.)
+
+The data format of the crossover points is a 11.5 bits in MHz, that gives a resolution of 1/32 MHz.
+The last data entry is a boolean flag to enable or disable the filter bank.
+
+Code sample:
+   uint16_t FilterCrossOver[16];        // allocate enough space for up to 16 filters
+   unsigned int filter_number_of_bytes;
+
+  // first find out how may cross over points there are for the 1st bank, use 255 for index
+  filter_number_of_bytes = usbCtrlMsgIN(0x17, 0, 255, FilterCrossOver, sizeof(FilterCrossOver));
+
+  // Specify filter cross over point for a softrock that divide the LO by 4!
+  // And read the points back from the device in the last call.
+  if (filter_number_of_bytes == 8)  // 3 crossover points and one flag, so set them up
+  {
+	FilterCrossOver[0] = 4.1 * 4.0 * (1<<5);
+	FilterCrossOver[1] = 8.0 * 4.0 * (1<<5);
+	FilterCrossOver[2] = 16. * 4.0 * (1<<5);
+	FilterCrossOver[3] = true;        // Enable
+
+	usbCtrlMsgIN(0x17, FilterCrossOver[0], 0, NULL, 0);
+	usbCtrlMsgIN(0x17, FilterCrossOver[1], 1, NULL, 0);
+	usbCtrlMsgIN(0x17, FilterCrossOver[2], 2, NULL, 0);
+	usbCtrlMsgIN(0x17, FilterCrossOver[3], 3, FilterCrossOver, sizeof(FilterCrossOver));
+  }
+
+
+Parameters: Setting one of the points
+   requesttype:    USB_ENDPOINT_IN
+   request:         0x17
+   value:           FilterCrossOver[i]   i being the index of the particular cross over point
+   index:           index of the 'value' filter point.
+   bytes:           Array of up to 16 16bits integers for the filter points.
+   size:            filter_number_of_bytes
+
+Parameters: Enable / disable the filter
+   requesttype:    USB_ENDPOINT_IN
+   request:         0x17
+   value:           0 (disable) or 1 (enable)
+   index:           index of 1 plus the last crossover point
+   bytes:           Array of up to 16 16bits integers for the filter points.
+   size:            filter_number_of_bytes
+
+
+Command 0x18:
+-------------
+[OPTION][enabled in ATmega32u2] Set the Band Pass Filter Address for one band: 0, 1, 2... 7 (3 bit value)
+Returns all 8 BPF address values
+Note that the Mobo 4.3 only has 3 bits available for BPF Address output,
+higher bits are masked out.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x18
+    value:           New Input Address Byte Value  (3 bit values)
+    index:           Frequency Band 0 - 7 for new Input Address Byte value
+    bytes:           pointer to 8 bytes, containing all BPF address values  (3 bit values)
+    size:            8
+
+
+Command 0x19:
+-------------
+[OPTION][enabled in ATmega32u2] Read the Band Pass Filter Addresses for bands 0, 1, 2... 7 (3 bit value)
+Returns all 8 BPF address values
+Note that the Mobo 4.3 only has 3 bits available for BPF Address output,
+higher bits are masked out.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x19
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer to 8 bytes, containing all BPF address values (3 bit values)
+    size:            8
+
+
+Command 0x1a:
+-------------
+[OPTION][enabled in ATmega32u2] Set the External Filter (MegaFilter Mobo) Address for one band: 0, 1, 2... 15 (4bit value)
+Returns all 16 External filter values
+
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x1a
+    value:           New Input Address Byte Value (8 bit values)
+    index:           Frequency Band 0 - 15 for new Input Address Byte value
+    bytes:           pointer to 16 bytes, containing all LPF address values (4 bit values)
+    size:            16
+
+
+Command 0x1b:
+-------------
+[OPTION][enabled in ATmega32u2] Read the TX Low Pass Filter Addresses for LPF bands 0, 1, 2... 15 (4bit value)
+Returns all 16 LPF address values
+
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x1b
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer to 8 bytes, containing all LPF address values (4 bit values)
+    size:            16
+
+
+Command 0x20:
+-------------
+[OPTION] [enabled in ATmega32u2] can be enabled by #define switch in Mobo.h file
+Write one byte to a Si570 register. Return value is the i2c error boolean in the buffer array.
+
+Code sample:
+	// Si570 RECALL function
+	uint8_t i2cError;
+    r = usbCtrlMsgIN(0x20, 0x55 | (135<<8), 0x01, &i2cError, 1);
+	if (r == 1 && i2cError == 0)
+		// OK
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x20
+    value:           I2C Address low byte (only for the DG8SAQ firmware)
+                     Si570 register high byte
+    index:           Register value low byte
+    bytes:           NULL
+    size:            0
+
+
+Command 0x30:
+-------------
+Set the oscillator frequency by Si570 register. The real frequency will be 
+calculated by the firmware and the called command 0x32
+
+Default:    None
+
+Parameters:
+    requesttype:    USB_ENDPOINT_OUT
+    request:         0x30
+    value:           I2C Address (only for the DG8SAQ firmware), Don't care
+    index:           7 (only for the DG8SAQ firmware), Don't care
+    bytes:           pointer 48 bits register
+    size:            6
+
+
+Command 0x31:
+-------------
+[OPTION] [enabled in ATmega32u2] can be enabled by #define switch in Mobo.h file
+Write the frequency subtract, multiply value's to the eeprom and use it.
+
+The real frequency is the input frequnecy minus the subtract value times the multiply value.
+Si570_F = (Finput - subtract) * multiply
+
+
+Default:    None
+
+Parameters:
+    requesttype:    USB_ENDPOINT_OUT
+    request:         0x31
+    value:           Don't care
+    index:           Band 0 - 7.  Corresponds to the BPF filter bands
+    bytes:           pointer 2 * 32 bits interger
+    size:            8
+
+Code sample:
+	double sub, mul;
+    uint32_t iSM[2];
+
+	sub = 135.0;
+	mul = 4.0;
+
+	iSM[0] = (uint32_t)( sub * (1UL << 21) );
+	iSM[1] = (uint32_t)( mul * (1UL << 21) );
+
+    r = usbCtrlMsgOUT(0x31, 0, 0, (char *)iSM, sizeof(iSM));
+    if (r != sizeof(iSM)) Error
+
+
+Command 0x32:
+-------------
+Set the oscillator frequency by value. The frequency is formatted in MHz
+as 11.21 bits value. 
+The "automatic band pass filter selection", "smooth tune", "one side calibration" and
+the "frequency subtract multiply" are all done in this function. (if anabled in the firmware)
+
+If the Rotary Encoder Option has been enabled, then the Index selects memory location 0 - 9,
+into which the frequency is written.  Memory location 0 is the active location, a write to 0
+results in an instant change to the new frequency.  Memory locations 1 - 9 normally store the
+last frequency used in each of the bands {1.8, 3.5, 7, 10, 14, 18, 21, 24, 28} MHz.
+Index 1 - 9 gives access to overwrite those memory locations with a new value, without regard
+to frequency band order.  A write to any of these memory locations will not be stored in
+EEPROM.
+
+Default:    None
+
+Parameters:
+    requesttype:    USB_ENDPOINT_OUT
+    request:         0x32
+    value:           Don't care
+    index:           Memory locations 0 - 9 if Rotary Encoder, else Don't care
+    bytes:           pointer 32 bits integer
+    size:            4
+
+Code sample:
+    uint32_t iFreq;
+    double   dFreq;
+
+    dFreq = 30.123456; // MHz
+    iFreq = (uint32_t)( dFreq * (1UL << 21) )
+    r = usbCtrlMsgOUT(0x32, 0, 0, (char *)&iFreq, sizeof(iFreq));
+    if (r < 0) Error
+
+
+Command 0x33:
+-------------
+Write new crystal frequency to EEPROM and use it. It can be changed to calibrate the device.
+The frequency is formatted in MHz as a 8.24 bits value.
+
+Default:    114.285 MHz
+
+Parameters:
+    requesttype:    USB_ENDPOINT_OUT
+    request:         0x33
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer 32 bits integer
+    size:            4
+
+Code sample:
+    uint32_t iXtalFreq;
+    double   dXtalFreq;
+
+    dXtalFreq = 114.281;
+    iXtalFreq = (uint32_t)( dXtalFreq * (1UL<<24) )
+    r = usbCtrlMsgOUT(0x33, 0, 0, (char *)&iXtalFreq, sizeof(iXtalFreq));
+    if (r < 0) Error
+
+
+Command 0x34:
+-------------
+Write new startup frequency to eeprom. When the device is started it will output
+this frequency until a program set an other frequency.
+The frequency is formatted in MHz as a 11.21 bits value.
+
+If the Rotary Encoder Option has been enabled, then the Index selects memory location 0 - 9,
+into which the frequency is written.  The memory location written to will be selected as
+the startup frequency when the controller is powered up, unless changed by a Rotary Encoder
+"Memory Store" action.  Memory location 0 cannot be accessed by the Rotary Encoder "Memory Rotate"
+function.  Memory locations 1 - 9 store the last frequency saved, normally in each of the bands
+{1.8, 3.5, 7, 10, 14, 18, 21, 24, 28} MHz.  Each memory location can be written to any frequency,
+regardless of the frequency band scheme indicated above.  A write to any of these memory
+locations is stored in EEPROM.
+
+Default:    7.050 MHz
+
+or with Rotary Encoder Option enabled:
+ 	    7.050 MHz
+	    1.820 MHz
+	    3.052 MHz
+	    7.020 MHz
+	   10.120 MHz
+	   14.020 MHz
+	   18.090 MHz
+	   21.020 MHz
+	   24.910 MHz
+	   28.020 MHz
+
+Parameters:
+    requesttype:    USB_ENDPOINT_OUT
+    request:         0x34
+    value:           Don't care
+    index:           Memory locations 0 - 9 if Rotary Encoder, else Don't care
+    bytes:           pointer 32 bits integer
+    size:            4
+
+Code sample:
+    uint32_t iXtalFreq;
+    double   dXtalFreq;
+
+    dFreq = 4.0 * 3.550; // MHz
+    iFreq = (uint32_t)( dFreq * (1UL<<24) )
+    r = usbCtrlMsgOUT(0x34, 0, 0, (char *)&iFreq, sizeof(iFreq));
+    if (r < 0) Error
+
+
+Command 0x35:
+-------------
+Write new smooth tune to eeprom and use it.
+
+Default:    3500 PPM
+
+Parameters:
+    requesttype:    USB_ENDPOINT_OUT
+    request:         0x35
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer 16 bits integer
+    size:            2
+
+Code sample:
+    uint16_t Smooth;
+    Smooth = 3400;
+    r = usbCtrlMsgOUT(0x35, 0, 0, (char *)&Smooth, sizeof(Smooth));
+    if (r < 0) Error
+
+
+Command 0x36:
+-------------
+[TWO OPTIONS, Both normally Disabled (legacy, use Cmd 0x67 & 0x68] 
+1) Modify Rotary Encoder Resolution.  This is a potential but limited alternative to Cmd 0x67, can be used if
+frequency steps are to be very large, i.e. the encoder is used as a band switcher rather than as a
+VFO.
+
+2) LCD Frequency Readout Offset for PowerSDR-IQ, during Receive Only.
+
+The first option uses a signed 32bit integer which contains frequency increments in units of ~0.12 Hz 
+(or 8 ~ 1 Hz).  Note that if this value is set too high, or more than 3500ppm of the operating
+frequency, then "smoothtune" breaks.  This value cannot be read.  Typical value is 8
+(or 0xfffffff7 for -8, or opposite direction) in case of a 1024 pulse encoder, or 262
+(0xfffffef9) in case of a 32 pulse encoder, to get 1kHz per revolution of the VFO.
+
+Note also, that if the Variable speed encoder is enabled in the firmware settings, the above
+described value is automatically multiplied by 100 while the higher speed function is active.
+
+The second option uses a signed 32bit integer which contains the LCD Offset frequency in 
+the format: 1.234567 MHz * 4.0 * _2(21).  This value is normally set as 0 for no offset.
+Standard offset for PowerSDR-IQ is 9kHz.  This would corresponds to a 32 bit signed
+integer number of 0X126E9 (or when entered in the DG8SAQ Si570 test program: E9 26 01 00
+(-9kHz would be FFFED917 or when entered in the DG8SAQ Si570 test program: 17 D9 FE FF)
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x36
+    value:           Don't care
+    index:           If 10 (0x0a), then set LCD Frequency Offset during RX, else
+                     modify Rotary Encoder Resolution
+    bytes:           pointer to a signed 32 bit integer
+    size:            4
+
+Code sample:
+    int32_t Enc_Resolution;
+    Enc_Resolution = 80;
+    r = usbCtrlMsgOUT(0x36, 0, 0, (char *)&Enc_Resolution, sizeof(Enc_Resolution));
+    if (r < 0) Error
+
+Code sample:
+    int32_t LCD_RX_Offset;
+    LCD_RX_Offset = 0xfffed917;	// -9kHz
+    r = usbCtrlMsgOUT(0x36, 0, 0x0a, (char *)&LCD_RX_Offset, sizeof(LCD_RX_Offset));
+    if (r < 0) Error
+
+
+Command 0x39:
+-------------
+[OPTION] [enabled in ATmega32u2] can be enabled by #define switch in Mobo.h file
+Return the frequency subtract multiply values  (values for 8 separate bands)..
+
+
+Default:    subtract = 0.0, multiply = 1.0
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x39
+    value:           Don't care
+    index:           Band 0 - 7.  Corresponds to the BPF filter bands
+    bytes:           pointer 2 * 32 bits integer
+    size:            8
+
+Code sample:
+    uint32_t iSM[2];
+	double sub, mul;
+
+    r = usbCtrlMsgIN(0x39, 0, 0, (char *)iSM, sizeof(iSM));
+    if (r != sizeof(iSM)) Error
+
+	sub = (double)(int32_t)iSM[0] / (1UL << 21); // Signed value
+	mul = (double)         iSM[1] / (1UL << 21);
+
+
+Return the frequency subtract multiply values
+
+
+Command 0x3A:
+-------------
+Return actual frequency of the device.
+The frequency is formatted in MHz as a 11.21 bits value.
+
+If the Rotary Encoder Option has been enabled, then the Index selects memory location 0 - 9,
+where memory location 0 contains the active frequency, and memory locations 1 - 9 contain
+the 9 last used frequencies (one of which is the same as the running frequency)
+Normally each of the nine memories correspond to the frequency bands:
+{1.8, 3.5, 7, 10, 14, 18, 21, 24, 28}, but in practice, each memory location can be written to
+any frequency, regardless of this frequency band scheme.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x3A
+    value:           Don't care
+    index:           Memory locations 0 - 9 if Rotary Encoder, else Don't care
+    bytes:           pointer 32 bits integer
+    size:            4
+
+Code sample:
+    uint32_t iFreq;
+    double   dFreq;
+    r = usbCtrlMsgIN(0x3A, 0, 0, (char *)&iFreq, sizeof(iFreq));
+    if (r == 4)
+        dFreq = (double)iFreq / (1UL<<21);
+
+
+Command 0x3B:
+-------------
+Return the "Smooth tune" PPM (pulse per MHz) of the device.
+The value is default 3500 (from data sheet) and can be changed. I do not know what 
+happened with the chip if it is out of range (>3500).
+If the value is set to zero it will disable the "Automatic Smooth tune" function.
+
+Default:    3500 PPM
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x3B
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer 16 bits integer
+    size:            2
+
+Code sample:
+    uint16_t Smooth;
+    r = usbCtrlMsgIN(0x3B, 0, 0, (char *)&Smooth, sizeof(Smooth));
+    if (r == 2) ...
+
+
+Command 0x3C:
+-------------
+Return device startup frequency.
+The frequency is formatted in MHz as a 11.21 bits value.
+
+If the Rotary Encoder Option has been enabled, then the Index selects EEPROM location 0 - 9,
+where EEPROM location 0 contains the startup frequency and EEPROM locations 1 - 9 contain
+the 9 last stored frequencies (one of which is the same as the startup frequency)
+Normally each of the nine memories correspond to the frequency bands:
+{1.8, 3.5, 7, 10, 14, 18, 21, 24, 28}, but in practice, each memory location can be written to
+any frequency, regardless of this frequency band scheme.
+
+Default:    7.050 MHz
+
+or with Rotary Encoder Option enabled:
+ 	    7.050 MHz
+	    1.820 MHz
+	    3.052 MHz
+	    7.020 MHz
+	   10.120 MHz
+	   14.020 MHz
+	   18.090 MHz
+	   21.020 MHz
+	   24.910 MHz
+	   28.020 MHz
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x3C
+    value:           Don't care
+    index:           Memory locations 0 - 9 if Rotary Encoder, else Don't care
+    bytes:           pointer 32 bits integer
+    size:            4
+
+Code sample:
+    uint32_t iFreq;
+    double   dFreq;
+    r = usbCtrlMsgIN(0x3C, 0, 0, (char *)&iFreq, sizeof(iFreq));
+    if (r == 4)
+        dFreq = (double)iFreq / (1UL<<21);
+
+
+Command 0x3D:
+-------------
+Return device crystal frequency.
+The frequency is formatted in MHz as a 8.24 bits value.
+
+Default:    114.285 MHz
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x3D
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer 32 bits integer
+    size:            4
+
+Code sample:
+    uint32_t iFreqXtal;
+    double   dFreqXtal;
+    r = usbCtrlMsgIN(0x3D, 0, 0, (char *)&iFreqXtal, sizeof(iFreqXtal));
+    if (r == 4)
+        dFreqXtal = (double)iFreqXtal / (1UL<<24);
+
+
+Command 0x3F:
+-------------
+Return the Si570 frequency control registers (reg 7 .. 12). If there are I2C errors
+the return length is 0.
+
+Default:    None
+
+Parameters:
+    requesttype:     USB_ENDPOINT_IN
+    request:         0x3F
+    value:           Don't care
+    index:           Don't care
+    bytes:           pointer 6 byte register array
+    size:            6
+
+
+Command 0x41:
+-------------
+Read/Modify the I2C addresses of all connected I2C devices.
+The function can also be used to reset the microcontroller to "factory default" by writing the
+value 255. After a restart the device will initialize to all the default values.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x41
+    value:           I2C address or 255
+    index:           see below
+    bytes:           pointer 8 bits integer
+    size:            1; unless "Factory Reset" by value 255, then size = 0, nothing returned
+
+	Index 0 reads/modifies the Si570_I2C_addr (Default: 0x55 (85 decimal))
+	Index 1 reads/modifies the I2C address for the onboard PCF8574
+	Index 2 reads/modifies the I2C address for the first PCF8574 used in the LPF Mobo
+	Index 3 reads/modifies the I2C address for the second PCF8574 used in the LPF Mobo
+	Index 4 reads/modifies the I2C address for the onboard TMP100 temperature sensor
+	Index 5 reads/modifies the I2C address for the onboard AD5301 8 bit DAC
+	Index 6 reads/modifies the I2C address for the onboard AD7991 4 x ADC
+	Index 7 reads/modifies the I2C address for the external PCF8574 used for FAN, attenuators etc
+
+[ATmega168 firmware feature. Not available in the Mobo 4.3 firmware]: 
+	Index 15 reads/modifies the address for the I2C connected LCD display (Default: 0x18)
+
+Command 0x50:
+-------------
+Set the PTT I/O line and read CW key level from the PB5 (CW Key_1) and PB1 (CW Key_2), and the current
+PTT state of the Mobo.
+The returnd bit value is bit 5 (0x20) for CW key_1, bit 1 (0x02) for CW key_2 and bit 6 (0x40) for the
+PTT state (1 equals TX on), the other bits are zero.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x50
+    value:           Output bool to user output PTT
+    index:           0
+    bytes:           pointer to 1 byte variable CW Key's
+    size:            1
+
+
+Command 0x51:
+-------------
+Read CW key level from the PB5 (CW Key_1) and PB1 (CW Key_2) and the current PTT state of the Mobo.
+The returnd bit value is bit 5 (0x20) for CW key_1, bit 1 (0x02) for CW key_2 and bit 6 (0x40) for the
+PTT state (1 equals TX on), the other bits are zero.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x51
+    value:           0
+    index:           0
+    bytes:           pointer to 1 byte variable CW Key's
+    size:            1
+
+
+Command 0x60:
+-------------
+[ATmega168 firmware feature. Not available in the Mobo 4.3 firmware]: 
+Select active features.
+This command can be used to select or determine which optional features have been selected.
+Currently, the available features are I2C connected LCD display and a Rotary Encoder driven VFO.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x60
+    value:           Features_Register
+    index:           Don't care
+    bytes:           pointer to 1 byte containing the Features_Register
+    size:            1
+
+	The Features register is one byte used as 8 on/off switches.
+	Bit 0 = LCD Display    (1 = enabled)
+	Bit 1 = Rotary Encoder (1 = enabled)
+
+
+Command 0x61:
+-------------
+Read five analog inputs: 
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x61
+    value:           Don't care
+    index:           see below
+    bytes:           pointer 16 bits integer
+    size:            2
+
+	Index 0 = PA current, full scale 0xfff0 = 2.5A
+	Index 1 = Power Output
+	Index 2 = Power reflected
+	Index 3 = Supply voltage, full scale 0xfff0 = 15.64V
+	Index 4 = Temperature in degC.Signed Int.  0 = 0 deg C
+	          0x7ff0 =  127.9375 deg C (128*0x7ff0/0x8000), 0xfff0 = -128 deg C
+
+
+Command 0x64:
+-------------
+Read/Modify the PA High Temperature limit (deg C), PA Fan On trigger point (deg C),
+PA Fan Off trigger point (deg C), and, optionally, if external PCF is configured for
+this control: Which bit is used to control the Cooling Fan
+
+If a Value contains 0, then the current active setting is read. If higher, then the active
+setting is modified with the new value.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x64
+    value:           PA temperature limit in deg C (1 - 127)
+    index:           Don't care
+    bytes:           pointer 8 bits integer
+    size:            1
+
+	Index 0 = PA High Temperature limit (deg C)
+	Index 1 = PA Fan On trigger point (deg C)
+	Index 2 = PA Fan Off trigger point (deg C)
+	Index 3 = Which bit is used to control the Cooling Fan
+
+
+Command 0x65:
+-------------
+Read/Modify PA Bias Setting related values
+If value contains 0, then the parameter is read, else it is written
+By default Index 0 contains a 2, which selects the calibration value for the higher bias
+setting.  This value is stored under index 4.
+If Index 0 is set to 1, this selects the calibration value for the lower bias setting.
+This valuse is stored under Index 3.
+Index 0 set to any other value forces a Autobias function to run, cranking up the RD06HHF1
+bias in increments of 1 and then comparing the PA_current with the values stored under Index 1
+(for the lower bias setting) and Index 2 (for the higher bias setting).  When a match is found,
+the value is stored under indexes 3 and 4 respectively.  If autobias function was unsuccessful,
+a 0 is stored under indexes 3 and 4.
+Note that if the higher bias setting is selected, and the SWR protect function is activated due
+to a high SWR situation, the bias is automatically reduced to the lower setting while the SWR
+Alarm remains active.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x65
+    value:           8 bit parameter
+    index:           see below
+    bytes:           pointer 8 bits integer
+    size:            1
+
+	Index 0: Bias_Select; 0xff = Force Calibrate, 1 = LO, 2 = HI
+	Index 1: PA Bias in 10 * mA, typically 2 = 20ma = Class B
+	Index 2: PA Bias in 10 * mA, typically 35 = 350ma = Class A
+	Index 3: PA Bias setting, LO  (normally an auto adjusted value)
+	Index 4: PA Bias setting, HI  (normally an auto adjusted value)
+
+
+Command 0x66:
+-------------
+Read/Modify Power and SWR Alarm Function related parameters
+If value contains 0, then the parameter is read, else it is written
+
+See description of Command 0x65 for SWR Alarm functionality.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x66
+    value:           16 bit parameter
+    index:           see below
+    bytes:           Pointer 16 bits integer.  Index 4, 5 only use 8 bits
+    size:            2
+
+	Index 0 selects a trigger point value in milliWatts, to indicate a valid Power output measurement
+	to be used for the SWR Alarm function.  If the measured Power output value is below this
+	trigger point, then the SWR Alarm function remains inactive.  Smallest meaningful falue is appr 45mW,
+	largest value is 65535mW.
+	
+	Index 1 value is used for a "Latency" timer (in units of 10ms, can be set awfully long:)
+	If SWR alarm situation, and SWR is good again, then this timer has to expire before
+	reverting back to full Power Out.
+	
+	Index 2 value decides the SWR Alarm threshold (27 equals an SWR of 2.7)
+	
+	Index 3 is a calibration value for the Power Out display.  Nominal value is 1000
+	(set in Mobo.h)
+
+	Index 4, enabled in the Bargraph LCD version, selects the Fullscale range for the Power
+    Bargraph.  Default value (defined in Mobo.h) is 4, as in 4 Watts full scale.
+
+	Index 5, [OPTION], {is usually} enabled in the Bargraph LCD version, selects the Fullscale range
+	for the SWR	Bargraph.  Default value (defined in Mobo.h) is 4, which equals an SWR of 5.0
+	(Max SWR = Value + 1, or 4 = SWR of 5.0)
+
+	Index 6, [OPTION], {is usually} enabled in the Bargraph LCD version.  Adjusts the number of PEP
+	measurement samples for LCD power display (1-20).  A value of 1 effectively	turns the PEP sampling off.
+	Default value (defined in Mobo.h) is 10, which equals a sample period of 1.0 seconds
+
+
+
+Command 0x67:
+-------------
+[OPTION] [Enabled] Set the Encoder Resolvable States per Revolution for 1kHz tune per Rev
+If value contains 0, then the parameter is read, else it is written
+By default, the parameter is 1024 ( = 256 PPS)
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x67
+    value:           16 bit value containing the Encoder PPS x 4 (resolvable states per revolution)
+    index:           don't care
+    bytes:           pointer 16 bits integer 
+    size:            2
+
+
+Command 0x68:
+-------------
+[OPTION] [Enabled] LCD Frequency Readout Offset for PowerSDR-IQ, during Receive Only.
+This value is normally set as 0 for no offset.  Signed 8 bit integer, resolution 1kHz.
+E.g. 9 = 9kHz, 246 = -9kHz.  Standard offset for PowerSDR-IQ is 9kHz.
+This command uses the Index to indicate whether an input Value is to be read.  This
+is necessary, as Value can be equal to 0.
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x68
+    value:           8 bit parameter
+    index:           if Index>0, then New value contained in Value, else just read
+    bytes:           pointer 8 bits signed integer
+    size:            1
+
+
+Command 0x6e:
+-------------
+[OPTION] [Enabled] Write byte to PCF8574 I2C connected GPIO Extender.  The returned value is the actual
+value read from the device
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x6e
+    value:           Output byte
+    index:           I2C address of device
+    bytes:           pointer 8 bits integer
+    size:            1
+
+
+Command 0x6f:
+-------------
+[OPTION] [Enabled] Read byte from PCF8574 I2C connected GPIO Extender.  The returned value is the actual
+value read from the device
+
+Parameters:
+    requesttype:    USB_ENDPOINT_IN
+    request:         0x6f
+    value:           Don't care
+    index:           I2C address of device
+    bytes:           pointer 8 bits integer
+    size:            1
+
+
+
+EOF
