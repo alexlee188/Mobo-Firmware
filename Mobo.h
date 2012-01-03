@@ -125,7 +125,7 @@
 #define	VERSION_MAJOR		16	// USB Protocol Version scheme, co-ordinated with PE0FKO
 #define	VERSION_MINOR		13
 
-#define	EXT_SET_FEATURES	0	// Use an external file, Mobo-Features.h to select the
+#define	EXT_SET_FEATURES	1	// Use an external file, Mobo-Features.h to select the
 								// working configuration.  If this option is selected,
 								// then the features section below becomes inactive.
 

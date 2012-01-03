@@ -127,8 +127,8 @@ OBJDIR = .
 
 # Path to the LUFA library
 #LUFA_PATH = ../../..
-LUFA_PATH = ../LUFA090605
-#LUFA_PATH = ../LUFA090810
+#LUFA_PATH = ../LUFA090605
+LUFA_PATH = ../LUFA090810
 
 # LUFA library compile-time options
 LUFA_OPTS  = -D USE_NONSTANDARD_DESCRIPTOR_NAMES
@@ -676,7 +676,8 @@ extcoff: $(TARGET).elf
 # Link: create ELF output file from object files.
 .SECONDARY : $(TARGET).elf
 .PRECIOUS : $(OBJ)
-%.elf: $(OBJ)
+#%.elf: $(OBJ)            Don't know why this doesn't work
+Mobo.elf: $(OBJ)
 	@echo
 	@echo $(MSG_LINKING) $@
 	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)

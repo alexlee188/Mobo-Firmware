@@ -1,3 +1,8 @@
+Build with AVR Studio 4, WinAVR-20080430 and LUFA090810.
+
+Building with older or newer tools will likely result in a mal-functioning firmware and/or flash code size
+greater than what an AT90USB162 can take.
+
 //*********************************************************************************
 //**
 //** Project.........: USB controller firmware for the Softrock 6.3 SDR,
