@@ -59,6 +59,7 @@
  * Use 0 for HD44780 controller, change to 1 for displays with KS0073 controller.
  */
 #define LCD_CONTROLLER_KS0073 0  /**< Use 0 for HD44780 controller, 1 for KS0073 controller */
+#define LCD_CONTROLLER_OLED   1  // 0 for HD44780 conroller.  1 for OLED controller
 
 /** 
  *  @name  Definitions for Display Size 

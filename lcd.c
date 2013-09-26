@@ -578,7 +578,32 @@ void lcd_init(uint8_t dispAttr)
         DDR(LCD_DATA3_PORT) |= _BV(LCD_DATA3_PIN);
     }
     delay(16000);        /* wait 16ms or more after power-on       */
-    
+
+#if LCD_CONTROLLER_OLED
+	// 4 bit mode
+	// Function Set:   0010, 0010, 1000  (English/Japanese)
+	LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
+	LCD_DATA0_PORT |= _BV(LCD_DATA1_PIN);
+	LCD_DATA0_PORT &= ~_BV(LCD_DATA2_PIN);
+	LCD_DATA0_PORT &= ~_BV(LCD_DATA3_PIN);
+	lcd_e_toggle();
+	delay(64);
+	lcd_e_toggle();
+	delay(64);
+	LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);
+	LCD_DATA0_PORT &= ~_BV(LCD_DATA1_PIN);
+	LCD_DATA0_PORT &= ~_BV(LCD_DATA2_PIN);
+	LCD_DATA0_PORT |= _BV(LCD_DATA3_PIN);
+	lcd_e_toggle();
+	delay(64);
+
+	lcd_command(0x08);	// display off
+	lcd_command(0x01);	// clear display
+	lcd_command(0x06);	// Entry mode increment move cursor to right
+	lcd_command(0x02);	// Home
+	lcd_command(0x0c);	// display on
+
+#else
     /* initial write to lcd is 8bit */
     LCD_DATA1_PORT |= _BV(LCD_DATA1_PIN);  // _BV(LCD_FUNCTION)>>4;
     LCD_DATA0_PORT |= _BV(LCD_DATA0_PIN);  // _BV(LCD_FUNCTION_8BIT)>>4;
@@ -597,6 +622,7 @@ void lcd_init(uint8_t dispAttr)
     LCD_DATA0_PORT &= ~_BV(LCD_DATA0_PIN);   // LCD_FUNCTION_4BIT_1LINE>>4
     lcd_e_toggle();
     delay(64);           /* some displays need this additional delay */
+#endif
     
     /* from now the LCD only accepts 4 bit I/O, we can use lcd_command() */    
 #else
@@ -627,7 +653,9 @@ void lcd_init(uint8_t dispAttr)
 #else
     lcd_command(LCD_FUNCTION_DEFAULT);      /* function set: display lines  */
 #endif
-#endif
+#endif 
+
+
 	// The below appears unnecessary, commented out to save bytes
 	//lcd_command(LCD_DISP_OFF);              /* display off                  */
     //lcd_clrscr();                           /* display clear                */ 
